@@ -1,0 +1,25 @@
+{
+  "club": "Hapoel Petah Tikva Chess",
+  "clubHebrew": "מועדון השחמט הפועל פתח תקווה",
+  "note": "Edit this file to match the current club roster. 'rating' is the fallback FIDE rating used offline; the app refreshes real ratings from the live FIDE database (via the public Lichess FIDE API). 'fideId' is optional — when 0 the app resolves the player by name search and caches the id.",
+  "players": [
+    { "id": "gelfand",      "name": "Boris Gelfand",       "hebrewName": "בוריס גלפנד",       "title": "GM",  "rating": 2637, "fideId": 2805677 },
+    { "id": "rodshtein",    "name": "Maxim Rodshtein",     "hebrewName": "מקסים רודשטיין",    "title": "GM",  "rating": 2645, "fideId": 0 },
+    { "id": "nabaty",       "name": "Tamir Nabaty",        "hebrewName": "תמיר נבטי",         "title": "GM",  "rating": 2636, "fideId": 0 },
+    { "id": "smirin",       "name": "Ilya Smirin",         "hebrewName": "איליה סמירין",      "title": "GM",  "rating": 2601, "fideId": 0 },
+    { "id": "sutovsky",     "name": "Emil Sutovsky",       "hebrewName": "אמיל סוטובסקי",     "title": "GM",  "rating": 2615, "fideId": 0 },
+    { "id": "postny",       "name": "Evgeny Postny",       "hebrewName": "יבגני פוסטני",      "title": "GM",  "rating": 2555, "fideId": 0 },
+    { "id": "mikhalevski",  "name": "Victor Mikhalevski",  "hebrewName": "ויקטור מיכלבסקי",   "title": "GM",  "rating": 2519, "fideId": 0 },
+    { "id": "boruchovsky",  "name": "Avital Boruchovsky",  "hebrewName": "אביטל בורוחובסקי",  "title": "GM",  "rating": 2547, "fideId": 0 },
+    { "id": "kobo",         "name": "Ori Kobo",            "hebrewName": "אורי קובו",         "title": "GM",  "rating": 2532, "fideId": 0 },
+    { "id": "steinberg",    "name": "Nitzan Steinberg",    "hebrewName": "ניצן שטיינברג",     "title": "GM",  "rating": 2504, "fideId": 0 },
+    { "id": "gorshtein",    "name": "Ido Gorshtein",       "hebrewName": "עידו גורשטיין",     "title": "GM",  "rating": 2510, "fideId": 0 },
+    { "id": "sokolovsky",   "name": "Yahli Sokolovsky",    "hebrewName": "יהלי סוקולובסקי",   "title": "GM",  "rating": 2496, "fideId": 0 },
+    { "id": "zoler",        "name": "Dan Zoler",           "hebrewName": "דן זולר",           "title": "GM",  "rating": 2465, "fideId": 0 },
+    { "id": "greenfeld",    "name": "Alon Greenfeld",      "hebrewName": "אלון גרינפלד",      "title": "GM",  "rating": 2461, "fideId": 0 },
+    { "id": "soffer",       "name": "Ram Soffer",          "hebrewName": "רם סופר",           "title": "GM",  "rating": 2432, "fideId": 0 },
+    { "id": "bronstein_or", "name": "Or Bronstein",        "hebrewName": "אור ברונשטיין",     "title": "IM",  "rating": 2438, "fideId": 0 },
+    { "id": "efroimski",    "name": "Marsel Efroimski",    "hebrewName": "מרסל אפרוימסקי",    "title": "IM",  "rating": 2402, "fideId": 0 },
+    { "id": "shvayger",     "name": "Yuliya Shvayger",     "hebrewName": "יוליה שוויגר",      "title": "WGM", "rating": 2338, "fideId": 0 }
+  ]
+}

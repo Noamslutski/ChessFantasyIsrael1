@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Chess Fantasy Israel</string>
+    <string name="club_name">Hapoel Petah Tikva Chess</string>
+    <string name="club_name_hebrew">מועדון השחמט הפועל פתח תקווה</string>
+
+    <!-- Bottom navigation -->
+    <string name="nav_home">Home</string>
+    <string name="nav_collection">My Cards</string>
+    <string name="nav_packs">Packs</string>
+    <string name="nav_market">Market</string>
+    <string name="nav_players">Players</string>
+
+    <!-- Home -->
+    <string name="pawns_balance">Pawns balance</string>
+    <string name="daily_reward">Claim daily reward</string>
+    <string name="daily_reward_claimed">Daily reward claimed — come back tomorrow!</string>
+    <string name="watch_ad">Watch ad — free pack</string>
+    <string name="free_pack_ready">Open free pack</string>
+    <string name="collection_score">Collection score</string>
+    <string name="cards_owned">Cards owned</string>
+
+    <!-- Packs -->
+    <string name="buy">Buy</string>
+    <string name="open_pack">Open pack</string>
+    <string name="pack_free_desc">3 Common cards · always gray, always free</string>
+    <string name="pack_limited_desc">2 Common + 1 Limited card</string>
+    <string name="pack_rare_desc">2 Limited + 1 Rare card</string>
+    <string name="pack_super_rare_desc">1 Limited + 1 Rare + 1 Super Rare card</string>
+    <string name="pack_unique_desc">1 Rare + 1 Super Rare + 1 Unique card</string>
+
+    <!-- Market -->
+    <string name="tab_auctions">Auctions</string>
+    <string name="tab_buy_now">Buy now</string>
+    <string name="tab_offers">Offers</string>
+    <string name="place_bid">Bid</string>
+    <string name="buy_now">Buy</string>
+    <string name="make_offer">Counter-offer</string>
+    <string name="accept">Accept</string>
+    <string name="reject">Reject</string>
+    <string name="cancel_listing">Cancel</string>
+    <string name="send_offer">Send offer</string>
+    <string name="offer_pawns_hint">Pawns to add (optional)</string>
+
+    <!-- Card detail -->
+    <string name="sell_direct">List for sale</string>
+    <string name="start_auction">Start auction</string>
+    <string name="estimated_value">Estimated value</string>
+
+    <!-- Ads -->
+    <string name="ad_playing">Sponsored message…</string>
+    <string name="ad_reward_note">Watch the full ad to earn a free pack. Usually Common cards — with a lucky chance of a Limited (Pro) card!</string>
+    <string name="claim_reward">Claim reward</string>
+
+    <!-- Players -->
+    <string name="refresh_ratings">Refresh live ratings</string>
+    <string name="ratings_updating">Fetching live FIDE ratings…</string>
+</resources>

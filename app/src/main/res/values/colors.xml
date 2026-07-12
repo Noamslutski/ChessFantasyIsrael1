@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- App base palette -->
+    <color name="bg_dark">#101418</color>
+    <color name="surface_dark">#1B2127</color>
+    <color name="surface_light">#242B33</color>
+    <color name="gold">#F2B90D</color>
+    <color name="gold_dark">#B98A00</color>
+    <color name="on_gold">#1A1300</color>
+    <color name="text_primary">#F3F4F6</color>
+    <color name="text_secondary">#9AA4AF</color>
+    <color name="green_accent">#4CAF7D</color>
+    <color name="red_warn">#E5484D</color>
+    <color name="launcher_bg">#101418</color>
+
+    <!-- Rarity colors -->
+    <color name="rarity_common">#9AA0A6</color>
+    <color name="rarity_limited">#F2B90D</color>
+    <color name="rarity_rare">#E5484D</color>
+    <color name="rarity_super_rare">#2F80ED</color>
+    <color name="rarity_unique">#15181C</color>
+</resources>
