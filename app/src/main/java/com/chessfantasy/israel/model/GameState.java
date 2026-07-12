@@ -21,6 +21,12 @@ public class GameState {
 
     /** Live rating overrides fetched from the FIDE API, key = playerId */
     public Map<String, Integer> ratingOverrides = new HashMap<>();
+    /**
+     * Rating each player had when form rewards were last claimed, key = playerId.
+     * Real games move real FIDE ratings; the difference against this baseline
+     * is the player's "form" and pays out Pawns.
+     */
+    public Map<String, Integer> ratingBaselines = new HashMap<>();
     /** FIDE ids resolved by name search, key = playerId */
     public Map<String, Long> resolvedFideIds = new HashMap<>();
 

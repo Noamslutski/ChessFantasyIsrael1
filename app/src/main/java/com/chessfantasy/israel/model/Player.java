@@ -8,6 +8,8 @@ public class Player {
     public String title;
     public int rating;
     public long fideId;
+    /** Real career highlights, shown on the Players screen. */
+    public String achievements;
 
     public Player() {
     }

@@ -44,6 +44,15 @@ public class HomeFragment extends Fragment implements Refreshable {
             refreshData();
         });
 
+        Button form = view.findViewById(R.id.home_btn_form);
+        form.setOnClickListener(v -> {
+            long amount = repo.claimFormRewards();
+            Toast.makeText(requireContext(), amount > 0
+                    ? "Form bonus: +" + Format.pawns(amount) + " Pawns from your players' real games!"
+                    : getString(R.string.form_none), Toast.LENGTH_LONG).show();
+            refreshData();
+        });
+
         Button freePack = view.findViewById(R.id.home_btn_free_pack);
         freePack.setOnClickListener(v -> {
             if (repo.freePackRemainingMs() > 0) {
@@ -96,6 +105,14 @@ public class HomeFragment extends Fragment implements Refreshable {
         daily.setEnabled(repo.dailyRewardAvailable());
         daily.setText(repo.dailyRewardAvailable()
                 ? getString(R.string.daily_reward) : "Claimed — back tomorrow");
+
+        TextView formInfo = view.findViewById(R.id.home_form_info);
+        Button formButton = view.findViewById(R.id.home_btn_form);
+        long claimable = repo.claimableFormPawns();
+        formButton.setEnabled(claimable > 0);
+        formInfo.setText(claimable > 0
+                ? "Your players gained rating in real games — " + Format.pawns(claimable) + " Pawns waiting!"
+                : "Form bonus: earn Pawns when your players win real games (rating goes up). Refresh live ratings on the Players tab.");
 
         Button freePack = view.findViewById(R.id.home_btn_free_pack);
         long remaining = repo.freePackRemainingMs();

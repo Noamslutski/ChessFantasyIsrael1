@@ -71,6 +71,7 @@ public class GameRepository {
         if (catalog.clubHebrew != null) clubNameHebrew = catalog.clubHebrew;
         load();
         ensureSeeded();
+        ensureBaselines();
         tick();
     }
 
@@ -152,6 +153,55 @@ public class GameRepository {
         Long resolved = state.resolvedFideIds.get(p.id);
         if (resolved != null && resolved > 0) return resolved;
         return p.fideId;
+    }
+
+    // -------------------------------------------------- form from real games
+
+    private void ensureBaselines() {
+        for (Player p : roster) {
+            if (!state.ratingBaselines.containsKey(p.id)) {
+                state.ratingBaselines.put(p.id, ratingOf(p));
+            }
+        }
+    }
+
+    /**
+     * Rating change since the last form claim. FIDE ratings only move when the
+     * player plays real rated games, so this reflects real-world results.
+     */
+    public int formDelta(String playerId) {
+        Player p = getPlayer(playerId);
+        if (p == null) return 0;
+        Integer baseline = state.ratingBaselines.get(playerId);
+        if (baseline == null) return 0;
+        return ratingOf(p) - baseline;
+    }
+
+    /** Pawns currently claimable from my cards' real-world form. */
+    public long claimableFormPawns() {
+        long total = 0;
+        for (Card c : myCards()) {
+            int delta = formDelta(c.playerId);
+            if (delta > 0) {
+                total += Math.round(delta * c.rarity.valueMultiplier);
+            }
+        }
+        return total;
+    }
+
+    /**
+     * Pays out the form bonus and resets all baselines to current ratings.
+     * Returns the amount, or 0 when nothing is claimable.
+     */
+    public long claimFormRewards() {
+        long amount = claimableFormPawns();
+        if (amount <= 0) return 0;
+        state.pawns += amount;
+        for (Player p : roster) {
+            state.ratingBaselines.put(p.id, ratingOf(p));
+        }
+        save();
+        return amount;
     }
 
     // ---------------------------------------------------------------- minting

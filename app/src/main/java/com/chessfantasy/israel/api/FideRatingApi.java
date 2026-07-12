@@ -70,7 +70,10 @@ public class FideRatingApi {
                     long fideId = repo.knownFideId(p);
                     if (fideId > 0) {
                         data = fetchById(fideId);
-                        if (data != null && !nameMatches(p.name, optString(data, "name"))) {
+                        // FIDE sometimes spells first names differently
+                        // ("Ilia"/"Ilya"), so a configured id only needs the
+                        // surname to line up.
+                        if (data != null && !surnameMatches(p.name, optString(data, "name"))) {
                             data = null; // wrong id configured — fall through to search
                         }
                     }
@@ -163,15 +166,30 @@ public class FideRatingApi {
         return 0;
     }
 
-    /** True when every word of `ours` appears in the API's "Lastname, Firstname" form. */
+    /** True when every word of `ours` appears as a whole word in the API's name. */
     private boolean nameMatches(String ours, String theirs) {
         if (ours == null || theirs == null) return false;
-        String normalized = theirs.toLowerCase(Locale.US).replace(",", " ");
-        for (String token : ours.toLowerCase(Locale.US).split("\\s+")) {
-            if (token.isEmpty()) continue;
-            if (!normalized.contains(token)) return false;
+        List<String> theirTokens = tokenize(theirs);
+        for (String token : tokenize(ours)) {
+            if (!theirTokens.contains(token)) return false;
         }
         return true;
+    }
+
+    /** True when the surname (last word of `ours`) appears in the API's name. */
+    private boolean surnameMatches(String ours, String theirs) {
+        if (ours == null || theirs == null) return false;
+        List<String> ourTokens = tokenize(ours);
+        if (ourTokens.isEmpty()) return false;
+        return tokenize(theirs).contains(ourTokens.get(ourTokens.size() - 1));
+    }
+
+    private List<String> tokenize(String name) {
+        List<String> tokens = new ArrayList<>();
+        for (String t : name.toLowerCase(Locale.US).split("[^\\p{L}]+")) {
+            if (!t.isEmpty()) tokens.add(t);
+        }
+        return tokens;
     }
 
     private String optString(JsonObject obj, String key) {

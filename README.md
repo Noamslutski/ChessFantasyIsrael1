@@ -46,6 +46,23 @@ offers based on real card value.
 - **Daily reward** — the better your collection (sum of your top-5 card values,
   which scale with player ratings), the better the daily pack + Pawns
 
+### 🏆 Real players, real games
+All 18 roster players are **real Israeli chess professionals verified against the
+live FIDE database** (July 2026) — every card carries the player's confirmed FIDE
+ID and real current FIDE standard rating, plus real career achievements
+(e.g. Gelfand's 2012 World Championship match, Sokolovsky's 2026 Israeli
+Championship title).
+
+Real-world games drive the gameplay:
+- **Form bonus** — FIDE ratings only move when players play real rated games.
+  When your players gain rating in real life, the app pays out Pawns
+  (delta × card rarity multiplier). Claim on the Home screen; baselines reset
+  after each claim.
+- **Real games & profiles** — tap any player on the Players tab for career
+  highlights and one-tap links to their live FIDE profile
+  (`ratings.fide.com/profile/{id}`) and their **real rated games in PGN**
+  (`ratings.fide.com/view_games.phtml?id={id}`).
+
 ### 📡 Live FIDE ratings API
 The Players screen shows the club roster with FIDE ratings and a
 **"Refresh live ratings"** button. Ratings are fetched from the public
@@ -64,17 +81,20 @@ The roster lives in **`app/src/main/assets/players.json`**. Each entry:
 
 ```json
 { "id": "gelfand", "name": "Boris Gelfand", "hebrewName": "בוריס גלפנד",
-  "title": "GM", "rating": 2637, "fideId": 2805677 }
+  "title": "GM", "rating": 2635, "fideId": 2805677,
+  "achievements": "World Championship challenger 2012 · Candidates winner 2011" }
 ```
 
-- `rating` is the offline fallback; the live API overrides it when reachable.
-- `fideId` is optional (`0` = resolve by name search automatically).
+- All bundled `fideId`s and ratings are verified against the FIDE database
+  (July 2026); the live API keeps ratings current after that.
+- `fideId` may be set to `0` for a new player — the app resolves it by name
+  search automatically.
 - Add/remove/rename players freely — the game picks the file up on next launch
   (cards of removed players keep working).
 
-> ⚠️ The bundled roster is a best-effort list of well-known Israeli chess
-> professionals. To match the exact current Hapoel Petah Tikva club lineup,
-> update this file from the club page on the Israeli Chess Federation site:
+> ℹ️ The bundled roster is verified real Israeli chess professionals. To mirror
+> the exact current Hapoel Petah Tikva club lineup, adjust this file using the
+> club page on the Israeli Chess Federation site:
 > https://www.chess.org.il/clubs/Club.aspx?Id=30
 
 ## Building & running

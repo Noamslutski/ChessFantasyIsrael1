@@ -55,4 +55,11 @@
     <!-- Players -->
     <string name="refresh_ratings">Refresh live ratings</string>
     <string name="ratings_updating">Fetching live FIDE ratings…</string>
+    <string name="tap_for_real_games">Tap for career info, live FIDE profile and real games</string>
+    <string name="fide_profile">Live FIDE profile</string>
+    <string name="real_games">Real games (PGN)</string>
+
+    <!-- Form rewards from real games -->
+    <string name="form_claim">Claim form bonus</string>
+    <string name="form_none">No form bonus yet — your players\' real FIDE ratings haven\'t changed since your last claim. Refresh live ratings after they play.</string>
 </resources>
