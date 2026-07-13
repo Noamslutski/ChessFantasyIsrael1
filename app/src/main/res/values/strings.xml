@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">Chess Fantasy Israel</string>
-    <string name="club_name">Hapoel Petah Tikva Chess</string>
-    <string name="club_name_hebrew">מועדון השחמט הפועל פתח תקווה</string>
+    <string name="club_name">Israel National Chess Pool</string>
+    <string name="club_name_hebrew">מאגר שחקני השחמט של ישראל</string>
 
     <!-- Bottom navigation -->
     <string name="nav_home">Home</string>

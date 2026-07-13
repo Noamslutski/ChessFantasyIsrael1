@@ -1,7 +1,9 @@
 # Chess Fantasy Israel ♟️
 
-A Sorare-style fantasy collectible card game for Android (Java), built around the
-chess players of **Hapoel Petah Tikva Chess** (מועדון השחמט הפועל פתח תקווה).
+A Sorare-style fantasy collectible card game for Android (Java), built around
+**every notable Israeli chess player** — all 30 of Israel's titled players
+(23 Grandmasters, 4 International Masters, 2 Woman Grandmasters, 1 Woman IM),
+each a real person with a **verified FIDE ID**.
 
 No login, no backend — you're in the game the moment the app opens.
 
@@ -47,11 +49,14 @@ offers based on real card value.
   which scale with player ratings), the better the daily pack + Pawns
 
 ### 🏆 Real players, real games
-All 18 roster players are **real Israeli chess professionals verified against the
+All 30 roster players are **real Israeli titled players verified against the
 live FIDE database** (July 2026) — every card carries the player's confirmed FIDE
 ID and real current FIDE standard rating, plus real career achievements
 (e.g. Gelfand's 2012 World Championship match, Sokolovsky's 2026 Israeli
-Championship title).
+Championship title, Klinova's 2024 World Women's Senior title). The roster spans
+Israel's elite (Gelfand, Rodshtein, Nabaty, Sutovsky, Smirin, Roiz, Postny…)
+through its rising IMs and its leading women players. Deceased players and those
+who have transferred to another federation are deliberately excluded.
 
 Real-world games drive the gameplay:
 - **Form bonus** — FIDE ratings only move when players play real rated games.
@@ -83,31 +88,36 @@ Each source **fails independently and gracefully**: a player is matched by
 `fideId`/`ilId`/`chessComUser` from `players.json`, and if a source is
 unreachable or a field is missing the app just uses the next source, falling
 back to the offline rating bundled in `players.json`. The app never breaks
-without internet. The bundled roster ships with verified FIDE IDs and, for 10
-of the 18 players, verified chess.org.il IDs; set `ilId`/`chessComUser` for the
-rest to light up those sources.
+without internet. The bundled roster ships with verified FIDE IDs for all 30
+players and, for the 10 top players, verified chess.org.il IDs; set
+`ilId`/`chessComUser` for the rest to light up those sources.
 
-## Editing the club roster
+## Editing the roster
 
-The roster lives in **`app/src/main/assets/players.json`**. Each entry:
+The roster lives in **`app/src/main/assets/players.json`** — all 30 real Israeli
+titled players. Each entry:
 
 ```json
 { "id": "gelfand", "name": "Boris Gelfand", "hebrewName": "בוריס גלפנד",
-  "title": "GM", "rating": 2635, "fideId": 2805677,
+  "title": "GM", "rating": 2635, "fideId": 2805677, "ilId": 4, "chessComUser": "",
   "achievements": "World Championship challenger 2012 · Candidates winner 2011" }
 ```
 
-- All bundled `fideId`s and ratings are verified against the FIDE database
-  (July 2026); the live API keeps ratings current after that.
-- `fideId` may be set to `0` for a new player — the app resolves it by name
-  search automatically.
+- Every bundled `fideId` is verified against the FIDE database (July 2026); the
+  live multi-source refresh keeps ratings current after that.
+- `fideId` may be `0` for a new player — the app resolves it by name search.
+  `ilId` (chess.org.il) and `chessComUser` are optional per-player.
 - Add/remove/rename players freely — the game picks the file up on next launch
   (cards of removed players keep working).
 
-> ℹ️ The bundled roster is verified real Israeli chess professionals. To mirror
-> the exact current Hapoel Petah Tikva club lineup, adjust this file using the
-> club page on the Israeli Chess Federation site:
+> ℹ️ Want to scope the game to a single club (e.g. Hapoel Petah Tikva) instead
+> of the whole country? Just keep that club's players in this file. To pull an
+> exact club lineup, use its page on the Israeli Chess Federation site, e.g.
 > https://www.chess.org.il/clubs/Club.aspx?Id=30
+>
+> Want *every* FIDE-rated Israeli player (thousands, including club and junior
+> players)? That's a different scale — a runtime loader over FIDE's full rating
+> list filtered to federation ISR. Open an issue and it can be added.
 
 ## Building & running
 
@@ -129,7 +139,9 @@ app/src/main/java/com/chessfantasy/israel/
 │   ├── GameRepository.java      # game logic: minting caps, packs, market
 │   │                            # simulation, trades, rewards, persistence
 │   └── PlayerCatalog.java       # loads players.json
-├── api/FideRatingApi.java       # live FIDE ratings (Lichess public API)
+├── api/                         # multi-source live ratings:
+│                                # RatingService orchestrates FideProvider,
+│                                # IsraeliChessProvider, ChessComProvider
 └── ui/                          # fragments, adapters, pack opening,
                                  # rewarded ad, trade offer, card detail
 ```
