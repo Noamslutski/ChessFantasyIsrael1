@@ -1,0 +1,30 @@
+{
+  "_comment": "TEMPLATE ONLY. Do NOT use as-is. In the Firebase console create a project, add an Android app with package name 'com.chessfantasy.israel', download the real google-services.json it generates, and save it as app/google-services.json (next to this file). Then enable Anonymous auth and Cloud Firestore. The build auto-detects the file and turns Firebase on.",
+  "project_info": {
+    "project_number": "000000000000",
+    "project_id": "your-firebase-project-id",
+    "storage_bucket": "your-firebase-project-id.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:000000000000:android:0000000000000000000000",
+        "android_client_info": {
+          "package_name": "com.chessfantasy.israel"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "YOUR_ANDROID_API_KEY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

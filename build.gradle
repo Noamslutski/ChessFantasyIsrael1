@@ -1,4 +1,6 @@
 // Top-level build file for Chess Fantasy Israel
 plugins {
     id 'com.android.application' version '8.5.2' apply false
+    // Applied by :app only when google-services.json is present (see app/build.gradle).
+    id 'com.google.gms.google-services' version '4.4.2' apply false
 }

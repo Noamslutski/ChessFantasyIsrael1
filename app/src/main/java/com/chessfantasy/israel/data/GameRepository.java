@@ -841,6 +841,7 @@ public class GameRepository {
         grantPack(reward, 1);
         state.lastGwSummary = "Gameweek " + state.currentGameweek + " finished — you placed #"
                 + rank + " with " + myPoints + " pts and won a " + reward.displayName + "!";
+        syncRemote(true); // publish final standing + backup
     }
 
     /** Nudges rival points toward their skill target so the board feels live. */
@@ -888,6 +889,29 @@ public class GameRepository {
         state.lastGwSummary = "";
         if (s != null && !s.isEmpty()) save();
         return s;
+    }
+
+    // ------------------------------------------------- remote sync (Firebase)
+
+    private long lastRemoteSyncAt = 0;
+    private static final long REMOTE_SYNC_INTERVAL_MS = TimeUnit.MINUTES.toMillis(2);
+
+    /**
+     * Pushes the manager's standing (and, on force, a full state backup) to
+     * Firebase. Throttled; a no-op when Firebase isn't configured.
+     */
+    public void syncRemote(boolean force) {
+        FirebaseGateway fb = FirebaseGateway.get();
+        if (!fb.isEnabled() || fb.uid() == null) return;
+        long now = System.currentTimeMillis();
+        if (!force && now - lastRemoteSyncAt < REMOTE_SYNC_INTERVAL_MS) return;
+        lastRemoteSyncAt = now;
+        if (state.managerName == null || state.managerName.isEmpty() || "You".equals(state.managerName)) {
+            state.managerName = "Manager-" + fb.uid().substring(0, Math.min(5, fb.uid().length()));
+        }
+        fb.syncManager(state.currentGameweek, state.managerName,
+                managerGameweekPoints(), state.managerSeasonPoints);
+        if (force) fb.backupState(gson.toJson(state));
     }
 
     // -------------------------------------------------------------------- ads
@@ -1219,6 +1243,7 @@ public class GameRepository {
         ensureGameweek();
         updateRivals();
         save();
+        syncRemote(false);
     }
 
     private void resolveEndedAuctions(long now) {

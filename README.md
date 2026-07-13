@@ -40,6 +40,46 @@ The market is simulated locally by bot collectors (no server needed) — they
 list cards, outbid you, buy your listings at fair prices and answer your trade
 offers based on real card value.
 
+### 🏆 Gameweeks, scoring & a competitive leaderboard
+The game runs on **weekly gameweeks** (ISO Mon–Sun). Each of your cards scores
+from its player's **real FIDE rating movement** that week; when a player has
+several games in the slate, the **per-game average is their score**. Your
+**manager points** are the sum of your top-5 lineup, accumulating into a season
+total.
+
+- **Leaderboard** — you compete against other managers; the League screen shows
+  your rank, points and the pack you're on track to win.
+- **Rank rewards** — when a gameweek closes, you're paid a pack by finish:
+  **1st → Super Rare, top 3 → Rare, top 10 → Limited, otherwise Free**, with a
+  result popup on Home.
+- **Upcoming games** — a Fixtures screen lists real upcoming games for Israeli
+  players (from the parse.bot `get_upcoming_games` API) and flags the players
+  you own, so you know who's playing this week.
+
+Without Firebase, rivals are realistic simulated managers so the competition
+always works; **with Firebase connected, the leaderboard is global and real**
+(see below).
+
+### ☁️ Firebase (optional cross-device + global leaderboard)
+The app has a Firebase layer (Anonymous Auth + Cloud Firestore) for a global
+leaderboard and a cross-device game-state backup. It's **off by default and
+fully optional** — without config the app runs in local mode.
+
+To turn it on:
+1. In the [Firebase console](https://console.firebase.google.com), create a
+   project and add an **Android app** with package `com.chessfantasy.israel`.
+2. Download the generated **`google-services.json`** and save it to
+   **`app/google-services.json`** (a template is at
+   `app/google-services.json.example`). It is git-ignored — never commit it.
+3. Enable **Anonymous** sign-in (Authentication) and **Cloud Firestore**.
+4. Rebuild. The build auto-detects the file and activates Firebase; the app
+   signs in anonymously, publishes your standing to
+   `leaderboards/{gameweek}/managers/{uid}`, backs up your game to
+   `users/{uid}`, and the League screen switches to the real global board.
+
+All Firebase calls are defensive — a missing config or backend error never
+crashes the game; it simply stays in local mode.
+
 ### 🎁 Packs & rewards
 - **Welcome gift** — a new account starts with **3 packs to open** (a Free, a
   Limited and a Rare pack), shown under "Your packs" on the Packs tab

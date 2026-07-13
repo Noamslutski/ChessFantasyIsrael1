@@ -15,6 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.chessfantasy.israel.R;
+import com.chessfantasy.israel.data.FirebaseGateway;
 import com.chessfantasy.israel.data.GameRepository;
 import com.chessfantasy.israel.model.LeaderboardEntry;
 import com.chessfantasy.israel.util.Format;
@@ -48,7 +49,7 @@ public class LeaderboardActivity extends AppCompatActivity {
 
         RecyclerView recycler = findViewById(R.id.lb_recycler);
         recycler.setLayoutManager(new LinearLayoutManager(this));
-        recycler.setAdapter(new Adapter());
+        recycler.setAdapter(new Adapter(GameRepository.get().leaderboard()));
 
         bind();
     }
@@ -56,10 +57,29 @@ public class LeaderboardActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        GameRepository.get().tick();
+        GameRepository repo = GameRepository.get();
+        repo.tick();
         bind();
+        showLocalBoard();
+
+        // If Firebase is connected, prefer the real global leaderboard.
+        FirebaseGateway fb = FirebaseGateway.get();
+        if (fb.isEnabled()) {
+            repo.syncRemote(true);
+            fb.fetchLeaderboard(repo.currentGameweekId(), 50, entries -> {
+                if (isFinishing() || entries == null || entries.isEmpty()) return;
+                RecyclerView recycler = findViewById(R.id.lb_recycler);
+                recycler.setAdapter(new Adapter(entries));
+                TextView gameweek = findViewById(R.id.lb_gameweek);
+                gameweek.setText(getString(R.string.gameweek) + " " + repo.currentGameweekId()
+                        + " · global · ends in " + Format.timeLeft(repo.gameweekRemainingMs()));
+            });
+        }
+    }
+
+    private void showLocalBoard() {
         RecyclerView recycler = findViewById(R.id.lb_recycler);
-        recycler.setAdapter(new Adapter()); // re-snapshot after the tick
+        recycler.setAdapter(new Adapter(GameRepository.get().leaderboard()));
     }
 
     private void bind() {
@@ -82,8 +102,12 @@ public class LeaderboardActivity extends AppCompatActivity {
         return "If the gameweek ended now you'd win a " + tier + ". Play the market and refresh live ratings to climb!";
     }
 
-    private class Adapter extends RecyclerView.Adapter<Holder> {
-        private final List<LeaderboardEntry> entries = GameRepository.get().leaderboard();
+    private static class Adapter extends RecyclerView.Adapter<Holder> {
+        private final List<LeaderboardEntry> entries;
+
+        Adapter(List<LeaderboardEntry> entries) {
+            this.entries = entries;
+        }
 
         @NonNull
         @Override

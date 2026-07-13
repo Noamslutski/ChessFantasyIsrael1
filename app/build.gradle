@@ -2,6 +2,12 @@ plugins {
     id 'com.android.application'
 }
 
+// Firebase activates only when you add your own google-services.json to app/.
+// Without it the app builds and runs in local mode (simulated leaderboard).
+if (file('google-services.json').exists()) {
+    apply plugin: 'com.google.gms.google-services'
+}
+
 android {
     namespace 'com.chessfantasy.israel'
     compileSdk 34
@@ -44,4 +50,11 @@ dependencies {
     implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
     implementation 'androidx.recyclerview:recyclerview:1.3.2'
     implementation 'com.google.code.gson:gson:2.10.1'
+
+    // Firebase (Auth + Firestore) for cross-device profiles and a global
+    // leaderboard. Safe to include even without google-services.json — the
+    // app disables Firebase gracefully at runtime when it isn't configured.
+    implementation platform('com.google.firebase:firebase-bom:33.7.0')
+    implementation 'com.google.firebase:firebase-auth'
+    implementation 'com.google.firebase:firebase-firestore'
 }

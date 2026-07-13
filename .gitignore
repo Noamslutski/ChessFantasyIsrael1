@@ -20,3 +20,6 @@ parse_apis/src/parse_apis/*
 .venv/
 __pycache__/
 *.pyc
+
+# Firebase config — never commit the real one (keep the .example)
+app/google-services.json
