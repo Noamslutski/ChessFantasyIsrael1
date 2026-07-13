@@ -8,6 +8,7 @@ import com.chessfantasy.israel.model.Card;
 import com.chessfantasy.israel.model.GameState;
 import com.chessfantasy.israel.model.PackType;
 import com.chessfantasy.israel.model.Player;
+import com.chessfantasy.israel.model.PlayerRatings;
 import com.chessfantasy.israel.model.Rarity;
 import com.chessfantasy.israel.model.SaleListing;
 import com.chessfantasy.israel.model.TradeOffer;
@@ -143,10 +144,22 @@ public class GameRepository {
         return override != null ? override : p.rating;
     }
 
-    public void applyLiveRating(String playerId, int rating, long resolvedFideId) {
-        if (rating > 0) state.ratingOverrides.put(playerId, rating);
-        if (resolvedFideId > 0) state.resolvedFideIds.put(playerId, resolvedFideId);
+    /** Applies merged multi-source live ratings for one player. */
+    public void applyRatings(String playerId, PlayerRatings ratings) {
+        if (ratings == null) return;
+        state.liveRatings.put(playerId, ratings);
+        Integer display = ratings.displayRating();
+        if (display != null && display > 0) state.ratingOverrides.put(playerId, display);
+        if (ratings.fideId > 0) state.resolvedFideIds.put(playerId, ratings.fideId);
         save();
+    }
+
+    public PlayerRatings liveRatings(String playerId) {
+        return state.liveRatings.get(playerId);
+    }
+
+    public long knownIlId(Player p) {
+        return p != null ? p.ilId : 0;
     }
 
     public long knownFideId(Player p) {

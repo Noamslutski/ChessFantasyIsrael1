@@ -7,7 +7,12 @@ public class Player {
     public String hebrewName;
     public String title;
     public int rating;
+    /** FIDE (international) id — chess.org.il uses this player's global id. */
     public long fideId;
+    /** Israeli Chess Federation (chess.org.il) player id, 0 if unknown. */
+    public long ilId;
+    /** chess.com username, empty if unknown. */
+    public String chessComUser;
     /** Real career highlights, shown on the Players screen. */
     public String achievements;
 

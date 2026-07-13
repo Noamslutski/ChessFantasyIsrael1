@@ -14,8 +14,11 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.chessfantasy.israel.R;
+import com.chessfantasy.israel.api.ChessComProvider;
+import com.chessfantasy.israel.api.IsraeliChessProvider;
 import com.chessfantasy.israel.data.GameRepository;
 import com.chessfantasy.israel.model.Player;
+import com.chessfantasy.israel.model.PlayerRatings;
 import com.chessfantasy.israel.model.Rarity;
 
 import java.util.List;
@@ -69,23 +72,43 @@ public class PlayerAdapter extends RecyclerView.Adapter<PlayerAdapter.Holder> {
         holder.itemView.setOnClickListener(v -> showPlayerDialog(v.getContext(), p));
     }
 
-    /** Career info plus links to the player's real FIDE profile and real games. */
+    /** Career info, all live source ratings, and links to the real profiles/games. */
     private void showPlayerDialog(Context context, Player p) {
         GameRepository repo = GameRepository.get();
         long fideId = repo.knownFideId(p);
+        long ilId = repo.knownIlId(p);
+        PlayerRatings live = repo.liveRatings(p.id);
+
         StringBuilder message = new StringBuilder();
         if (p.achievements != null && !p.achievements.isEmpty()) {
             message.append(p.achievements).append("\n\n");
         }
-        message.append("FIDE rating: ").append(repo.ratingOf(p));
+
+        message.append("Ratings\n");
+        if (live != null) {
+            appendRating(message, "FIDE standard", live.fideStandard);
+            appendRating(message, "FIDE rapid", live.fideRapid);
+            appendRating(message, "FIDE blitz", live.fideBlitz);
+            appendRating(message, "Israeli CF (chess.org.il)", live.nationalStandard);
+            appendRating(message, "chess.com FIDE", live.chessComFide);
+            appendRating(message, "chess.com blitz", live.chessComBlitz);
+            appendRating(message, "chess.com rapid", live.chessComRapid);
+            if (!live.sources.isEmpty()) {
+                message.append("Live from: ").append(String.join(", ", live.sources)).append("\n");
+            }
+        }
+        if (live == null || !live.hasAny()) {
+            message.append("• ").append(repo.ratingOf(p))
+                    .append(" (offline — tap Refresh live ratings)\n");
+        }
+
         int delta = repo.formDelta(p.id);
         if (delta != 0) {
-            message.append("  (").append(delta > 0 ? "+" : "").append(delta)
-                    .append(" since last form claim)");
+            message.append("\nForm since last claim: ")
+                    .append(delta > 0 ? "+" : "").append(delta);
         }
-        if (fideId > 0) {
-            message.append("\nFIDE ID: ").append(fideId);
-        }
+        if (fideId > 0) message.append("\nFIDE ID: ").append(fideId);
+        if (ilId > 0) message.append("\nchess.org.il ID: ").append(ilId);
 
         AlertDialog.Builder builder = new AlertDialog.Builder(context)
                 .setTitle(p.titledName())
@@ -96,8 +119,18 @@ public class PlayerAdapter extends RecyclerView.Adapter<PlayerAdapter.Holder> {
                     openUrl(context, "https://ratings.fide.com/profile/" + fideId));
             builder.setNeutralButton(R.string.real_games, (d, w) ->
                     openUrl(context, "https://ratings.fide.com/view_games.phtml?id=" + fideId));
+        } else if (ilId > 0) {
+            builder.setPositiveButton(R.string.il_profile, (d, w) ->
+                    openUrl(context, IsraeliChessProvider.profileUrl(ilId)));
+        } else if (p.chessComUser != null && !p.chessComUser.isEmpty()) {
+            builder.setPositiveButton("chess.com", (d, w) ->
+                    openUrl(context, ChessComProvider.profileUrl(p.chessComUser)));
         }
         builder.show();
+    }
+
+    private void appendRating(StringBuilder sb, String label, Integer value) {
+        if (value != null) sb.append("• ").append(label).append(": ").append(value).append("\n");
     }
 
     private void openUrl(Context context, String url) {

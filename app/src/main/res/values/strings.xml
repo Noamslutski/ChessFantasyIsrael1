@@ -53,11 +53,13 @@
     <string name="claim_reward">Claim reward</string>
 
     <!-- Players -->
-    <string name="refresh_ratings">Refresh live ratings</string>
-    <string name="ratings_updating">Fetching live FIDE ratings…</string>
-    <string name="tap_for_real_games">Tap for career info, live FIDE profile and real games</string>
-    <string name="fide_profile">Live FIDE profile</string>
+    <string name="refresh_ratings">Refresh live ratings (FIDE · chess.org.il · chess.com)</string>
+    <string name="ratings_updating">Fetching live ratings from FIDE, chess.org.il, chess.com…</string>
+    <string name="tap_for_real_games">Tap for career info, live profiles and real games</string>
+    <string name="fide_profile">FIDE profile &amp; games</string>
+    <string name="il_profile">chess.org.il profile</string>
     <string name="real_games">Real games (PGN)</string>
+    <string name="players_sources">Live ratings from FIDE, the Israeli Chess Federation (chess.org.il) and chess.com</string>
 
     <!-- Form rewards from real games -->
     <string name="form_claim">Claim form bonus</string>

@@ -19,8 +19,10 @@ public class GameState {
     /** key = season:playerId:rarity -> cards minted so far */
     public Map<String, Integer> mintCounts = new HashMap<>();
 
-    /** Live rating overrides fetched from the FIDE API, key = playerId */
+    /** Live display-rating overrides (FIDE standard), key = playerId */
     public Map<String, Integer> ratingOverrides = new HashMap<>();
+    /** Full multi-source ratings (FIDE, Israeli CF, chess.com), key = playerId */
+    public Map<String, PlayerRatings> liveRatings = new HashMap<>();
     /**
      * Rating each player had when form rewards were last claimed, key = playerId.
      * Real games move real FIDE ratings; the difference against this baseline

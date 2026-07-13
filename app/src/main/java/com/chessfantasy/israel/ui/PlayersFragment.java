@@ -15,7 +15,7 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.chessfantasy.israel.R;
-import com.chessfantasy.israel.api.FideRatingApi;
+import com.chessfantasy.israel.api.RatingService;
 import com.chessfantasy.israel.data.GameRepository;
 
 public class PlayersFragment extends Fragment implements Refreshable {
@@ -39,7 +39,7 @@ public class PlayersFragment extends Fragment implements Refreshable {
         TextView title = view.findViewById(R.id.players_title);
         TextView subtitle = view.findViewById(R.id.players_subtitle);
         title.setText(repo.getClubName());
-        subtitle.setText(repo.getClubNameHebrew());
+        subtitle.setText(getString(R.string.players_sources));
 
         refreshButton = view.findViewById(R.id.players_btn_refresh);
         refreshButton.setOnClickListener(v -> refreshRatings());
@@ -48,14 +48,11 @@ public class PlayersFragment extends Fragment implements Refreshable {
     private void refreshRatings() {
         refreshButton.setEnabled(false);
         refreshButton.setText(R.string.ratings_updating);
-        new FideRatingApi().refreshAll((updated, failed) -> {
+        new RatingService().refreshAll(summary -> {
             if (!isAdded()) return;
             refreshButton.setEnabled(true);
             refreshButton.setText(R.string.refresh_ratings);
-            String message = updated > 0
-                    ? "Updated " + updated + " live ratings" + (failed > 0 ? " (" + failed + " unavailable)" : "")
-                    : "Couldn't reach the FIDE database — using offline ratings";
-            Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
+            Toast.makeText(requireContext(), summary.describe(), Toast.LENGTH_LONG).show();
             refreshData();
         });
     }

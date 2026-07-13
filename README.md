@@ -63,17 +63,29 @@ Real-world games drive the gameplay:
   (`ratings.fide.com/profile/{id}`) and their **real rated games in PGN**
   (`ratings.fide.com/view_games.phtml?id={id}`).
 
-### 📡 Live FIDE ratings API
-The Players screen shows the club roster with FIDE ratings and a
-**"Refresh live ratings"** button. Ratings are fetched from the public
-**Lichess FIDE database API** (no API key needed):
+### 📡 Live ratings from multiple real chess data sources
+The Players screen has a **"Refresh live ratings"** button that pulls from
+**three real chess data sources** and merges them per player (tap any player to
+see every source's rating and open their real profiles/games):
 
-- `GET https://lichess.org/api/fide/player/{fideId}` — direct lookup
-- `GET https://lichess.org/api/fide/player?q={name}` — name search (Israeli
-  federation preferred), resolved ids are cached
+| Source | Endpoint | What it provides |
+|---|---|---|
+| **FIDE** (official, via Lichess FIDE DB mirror) | `GET lichess.org/api/fide/player/{fideId}` and `?q={name}` | FIDE standard / rapid / blitz — the primary rating |
+| **Israeli Chess Federation** (chess.org.il) | `players/Player.aspx?Id={ilId}` (HTML, parsed) | National rating (מד כושר) |
+| **chess.com** (official Published-Data API) | `GET api.chess.com/pub/player/{user}/stats` | chess.com blitz/rapid + the FIDE rating chess.com stores |
 
-If the network is down or the API is unreachable the app silently keeps the
-offline ratings bundled in `players.json` — the app never breaks offline.
+All are **keyless**. The design is a pluggable `RatingProvider` interface
+(`api/FideProvider`, `api/IsraeliChessProvider`, `api/ChessComProvider`)
+orchestrated by `api/RatingService` — adding another source (e.g. a
+chess-results.com team feed) is one new class.
+
+Each source **fails independently and gracefully**: a player is matched by
+`fideId`/`ilId`/`chessComUser` from `players.json`, and if a source is
+unreachable or a field is missing the app just uses the next source, falling
+back to the offline rating bundled in `players.json`. The app never breaks
+without internet. The bundled roster ships with verified FIDE IDs and, for 10
+of the 18 players, verified chess.org.il IDs; set `ilId`/`chessComUser` for the
+rest to light up those sources.
 
 ## Editing the club roster
 
