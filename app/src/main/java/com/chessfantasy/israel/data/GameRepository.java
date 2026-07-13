@@ -289,7 +289,9 @@ public class GameRepository {
             Player existing = findExisting(s);
             if (existing != null) {
                 boolean changed = false;
-                if (s.name != null && !s.name.isEmpty() && !s.name.equals(existing.name)) {
+                // Only replace the English name with another Latin-script name;
+                // the federation API returns Hebrew, which belongs in hebrewName.
+                if (s.name != null && s.name.matches(".*[A-Za-z].*") && !s.name.equals(existing.name)) {
                     state.nameOverrides.put(existing.id, s.name);
                     changed = true;
                 }

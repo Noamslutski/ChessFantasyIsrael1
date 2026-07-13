@@ -37,7 +37,8 @@ import java.util.concurrent.Executors;
 public class IsraelPlayerSearchApi {
 
     private static final String BASE = "https://api.parse.bot/scraper/";
-    private static final String SCRAPER_ID = "c7da0745-f5a9-4d91-86c2-e239a7a526ae";
+    // chess.org.il player-search scraper. Response: { data: { total, players[], search_name }, status }
+    private static final String SCRAPER_ID = "1d0d4b3a-a30d-4490-98fd-a89692c0c3e6";
 
     public interface Callback {
         void onResult(List<Player> players, String error);
@@ -127,15 +128,17 @@ public class IsraelPlayerSearchApi {
             fields.put(e.getKey().toLowerCase(Locale.ROOT).replace("_", "").replace(" ", ""), e.getValue());
         }
 
-        String english = str(fields, "name", "fullname", "playername", "englishname", "nameen", "enname", "namelatin");
-        String hebrew = str(fields, "hebrewname", "namehe", "hename", "hebrew", "namehebrew", "שם");
+        // chess.org.il returns the name in Hebrew ("Surname Firstname"); there is
+        // no English field. Any Latin field (nameen/…) wins if present.
+        String english = str(fields, "englishname", "nameen", "enname", "namelatin", "fullname");
+        String hebrew = str(fields, "name", "hebrewname", "namehe", "hename", "hebrew", "namehebrew", "playername", "שם");
         String displayName = !TextUtils.isEmpty(english) ? english : hebrew;
         if (TextUtils.isEmpty(displayName)) return null;
 
-        long fideId = asLong(fields, "fideid", "fide", "idfide", "fidenumber");
-        long ilId = asLong(fields, "ilid", "nationalid", "playerid", "israelid", "id", "memberid");
-        Integer fideRating = asInt(fields, "fiderating", "fidestandard", "standardrating", "standard", "fideelo");
-        Integer nationalRating = asInt(fields, "nationalrating", "rating", "elo", "ratingnational", "מדכושר");
+        long fideId = asLong(fields, "fidenumber", "fideid", "fide", "idfide");
+        long ilId = asLong(fields, "playerid", "playernumber", "ilid", "nationalid", "israelid", "memberid", "id");
+        Integer fideRating = asInt(fields, "fidestandardrating", "fiderating", "fidestandard", "standardrating", "standard");
+        Integer nationalRating = asInt(fields, "israelirating", "nationalrating", "rating", "elo");
         Integer rating = fideRating != null ? fideRating : nationalRating;
 
         Player p = new Player();
@@ -146,11 +149,37 @@ public class IsraelPlayerSearchApi {
         else p.id = "search_" + Integer.toHexString(displayName.hashCode());
         p.name = displayName.trim();
         p.hebrewName = hebrew != null ? hebrew.trim() : "";
-        p.title = normalizeTitle(str(fields, "title", "tit", "fidetitle"));
+        p.title = mapTitle(str(fields, "rank", "title", "tit", "fidetitle"));
         p.rating = rating != null && rating > 0 ? rating : 1600;
         p.chessComUser = "";
         p.achievements = "";
         return p;
+    }
+
+    /** Accepts an English title, else maps a Hebrew federation rank. */
+    private static String mapTitle(String raw) {
+        String t = normalizeTitle(raw);
+        return !t.isEmpty() ? t : mapHebrewTitle(raw);
+    }
+
+    /**
+     * Maps chess.org.il Hebrew titles (the "rank" field) to standard codes.
+     * Note: masculine forms use "אמן" (final nun) while feminine forms use
+     * "אמנית"/"רבת"/"מועמדת", so detection keys off distinct markers.
+     */
+    private static String mapHebrewTitle(String raw) {
+        if (raw == null) return "";
+        String r = raw.trim();
+        boolean women = r.contains("אמנית") || r.contains("רבת") || r.contains("מועמדת");
+        boolean grand = r.contains("רב");                       // רב-אמן / רבת-אמן
+        boolean candidate = r.contains("מועמד");                 // מועמד(ת) לאמן
+        boolean fide = r.contains("פידה") || r.contains("פיד");  // אמן פידה
+        boolean intl = r.contains("בינלאומי");                   // בינלאומי(ת)
+        if (grand) return women ? "WGM" : "GM";
+        if (candidate) return women ? "WCM" : "CM";
+        if (fide) return women ? "WFM" : "FM";
+        if (intl || r.contains("אמנית")) return women ? "WIM" : "IM";
+        return "";
     }
 
     private static String str(Map<String, JsonElement> fields, String... keys) {
