@@ -147,6 +147,7 @@ public class GameRepository {
         if (state.rivals == null) state.rivals = new ArrayList<>();
         if (state.currentGameweek == null) state.currentGameweek = "";
         if (state.lastGwSummary == null) state.lastGwSummary = "";
+        if (state.teamCardIds == null) state.teamCardIds = new ArrayList<>();
         if (state.managerName == null) state.managerName = "";
         if (state.firebaseUid == null) state.firebaseUid = "";
         if (state.season == null || state.season.isEmpty()) {
@@ -488,9 +489,39 @@ public class GameRepository {
 
     public Card mintRandom(Rarity rarity, String owner) {
         if (combined.isEmpty()) return null;
-        List<Player> shuffled = new ArrayList<>(combined);
-        Collections.shuffle(shuffled, random);
-        for (Player p : shuffled) {
+        // Bias by rarity: higher rarities favour the elite, commons favour the
+        // lower-rated club players (amateurs) — so a Common feels like a
+        // grassroots card and Uniques are the stars.
+        Card card = mintFromBand(rarityBand(rarity), rarity, owner);
+        if (card != null) return card;
+        return mintFromBand(combined, rarity, owner); // fall back to the full pool
+    }
+
+    /** A rating band of {@link #combined} (which is sorted rating-desc). */
+    private List<Player> rarityBand(Rarity rarity) {
+        int n = combined.size();
+        if (n <= LINEUP_SIZE) return combined;
+        switch (rarity) {
+            case UNIQUE:
+            case SUPER_RARE:
+                return combined.subList(0, Math.max(1, n / 4));            // top 25%
+            case RARE:
+                return combined.subList(0, Math.max(1, n / 2));            // top 50%
+            case LIMITED:
+                return combined.subList(n / 5, Math.max(n / 5 + 1, n * 85 / 100)); // middle
+            case COMMON:
+            default:
+                return combined.subList(n / 2, n);                         // bottom 50%
+        }
+    }
+
+    /** Mints from a band by probing from a random offset (no full shuffle). */
+    private Card mintFromBand(List<Player> band, Rarity rarity, String owner) {
+        if (band == null || band.isEmpty()) return null;
+        int n = band.size();
+        int start = random.nextInt(n);
+        for (int i = 0; i < n; i++) {
+            Player p = band.get((start + i) % n);
             Card card = mintCard(p.id, rarity, owner);
             if (card != null) return card;
         }
@@ -744,9 +775,14 @@ public class GameRepository {
     }
 
     /**
-     * A player's score for the current gameweek. Real FIDE rating movement is
-     * the performance signal; when a player has several games in the slate the
-     * per-game average is used, matching "average is his score".
+     * A player's score for the current gameweek.
+     *
+     * Real FIDE rating movement is the performance signal. In Elo, beating a
+     * higher-rated opponent yields a bigger rating gain — so the delta already
+     * "counts the difference in Elo". On top of that, an upset multiplier
+     * rewards lower-rated players more for the same gain, so an amateur who
+     * overperforms can out-score an elite. When a player has several games in
+     * the slate, the per-game average is used ("average is his score").
      */
     public int playerGameweekScore(String playerId) {
         Player p = getPlayer(playerId);
@@ -754,15 +790,73 @@ public class GameRepository {
         Integer baseline = state.gwBaseline.get(playerId);
         int delta = baseline != null ? ratingOf(p) - baseline : 0;
         int games = Math.max(1, gamesForPlayer(p));
-        double perGame = (double) (delta * 3) / games;   // average per game
-        long score = Math.round(BASE_GAME_SCORE + perGame);
-        return (int) Math.max(0, score);
+        double perGame = (double) delta / games;   // average rating swing per game
+
+        double score = BASE_GAME_SCORE + perGame * 4.0;
+        if (delta > 0) {
+            // Upset bonus: the lower the player's rating, the more a gain counts.
+            double levelFactor = clamp01((2500.0 - ratingOf(p)) / 900.0); // 0..1
+            score += delta * levelFactor * 1.5;
+        }
+        return (int) Math.max(0, Math.round(score));
     }
 
-    /** The user's lineup: their top cards by value. */
+    private static double clamp01(double v) {
+        return v < 0 ? 0 : (v > 1 ? 1 : v);
+    }
+
+    // ------------------------------------------------------- team (lineup)
+
+    /** The user's chosen team card ids, filtered to cards they still own. */
+    public List<String> getTeamCardIds() {
+        List<String> valid = new ArrayList<>();
+        for (String id : state.teamCardIds) {
+            Card c = getCard(id);
+            if (c != null && USER_ID.equals(c.owner)) valid.add(id);
+        }
+        return valid;
+    }
+
+    public List<Card> getTeamCards() {
+        List<Card> out = new ArrayList<>();
+        for (String id : getTeamCardIds()) {
+            Card c = getCard(id);
+            if (c != null) out.add(c);
+        }
+        return out;
+    }
+
+    public boolean isInTeam(String cardId) {
+        return getTeamCardIds().contains(cardId);
+    }
+
+    public int teamSize() {
+        return getTeamCardIds().size();
+    }
+
+    /** Saves the user's 5-card team (dedupes, caps at 5, must own each). */
+    public void setTeam(List<String> cardIds) {
+        List<String> clean = new ArrayList<>();
+        if (cardIds != null) {
+            for (String id : cardIds) {
+                if (clean.size() >= LINEUP_SIZE) break;
+                Card c = getCard(id);
+                if (c != null && USER_ID.equals(c.owner) && !clean.contains(id)) clean.add(id);
+            }
+        }
+        state.teamCardIds = clean;
+        save();
+    }
+
+    /**
+     * The scoring lineup: the chosen team if set, otherwise the top cards by
+     * value so a new manager still has a score until they pick a team.
+     */
     public List<Card> lineup() {
+        List<Card> team = getTeamCards();
+        if (!team.isEmpty()) return team;
         List<Card> cards = myCards();
-        return cards.size() > LINEUP_SIZE ? cards.subList(0, LINEUP_SIZE) : cards;
+        return cards.size() > LINEUP_SIZE ? new ArrayList<>(cards.subList(0, LINEUP_SIZE)) : cards;
     }
 
     /** The user's points for the current gameweek (sum over the lineup). */
@@ -1050,6 +1144,7 @@ public class GameRepository {
     public String createAuction(String cardId, long minBid, long durationMs) {
         Card card = getCard(cardId);
         if (card == null || !USER_ID.equals(card.owner)) return "You don't own this card";
+        if (card.rarity == Rarity.COMMON) return "Common cards can't be sold — only Limited and up.";
         if (isCardListed(cardId)) return "Card is already listed";
         if (minBid <= 0) return "Minimum bid must be positive";
         Auction a = new Auction();
@@ -1087,6 +1182,7 @@ public class GameRepository {
     public String listForSale(String cardId, long price) {
         Card card = getCard(cardId);
         if (card == null || !USER_ID.equals(card.owner)) return "You don't own this card";
+        if (card.rarity == Rarity.COMMON) return "Common cards can't be sold — only Limited and up.";
         if (isCardListed(cardId)) return "Card is already listed";
         if (price <= 0) return "Price must be positive";
         state.sales.add(new SaleListing(UUID.randomUUID().toString(), cardId, USER_ID, price));

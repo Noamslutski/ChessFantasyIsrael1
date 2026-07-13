@@ -13,6 +13,14 @@
     <color name="red_warn">#E5484D</color>
     <color name="launcher_bg">#101418</color>
 
+    <!-- Accent palette for a more colorful UI -->
+    <color name="accent_purple">#8B5CF6</color>
+    <color name="accent_teal">#14B8A6</color>
+    <color name="accent_orange">#FB923C</color>
+    <color name="accent_pink">#EC4899</color>
+    <color name="accent_blue">#3B82F6</color>
+    <color name="accent_sky">#38BDF8</color>
+
     <!-- Rarity colors -->
     <color name="rarity_common">#9AA0A6</color>
     <color name="rarity_limited">#F2B90D</color>

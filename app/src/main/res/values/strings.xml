@@ -70,6 +70,10 @@
     <string name="gameweek">Gameweek</string>
     <string name="season_points">Season points</string>
     <string name="manager_name_hint">Your manager name</string>
+    <string name="my_team">My Team</string>
+    <string name="pick_team_title">Pick your team</string>
+    <string name="pick_team_hint">Choose up to 5 cards. Their gameweek scores add up to your leaderboard points. Tip: a lower-rated player who upsets a stronger opponent can out-score an elite!</string>
+    <string name="save_team">Save team</string>
 
     <!-- Players -->
     <string name="refresh_ratings">Refresh live ratings (FIDE · chess.org.il · chess.com)</string>

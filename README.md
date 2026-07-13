@@ -41,11 +41,23 @@ list cards, outbid you, buy your listings at fair prices and answer your trade
 offers based on real card value.
 
 ### 🏆 Gameweeks, scoring & a competitive leaderboard
-The game runs on **weekly gameweeks** (ISO Mon–Sun). Each of your cards scores
-from its player's **real FIDE rating movement** that week; when a player has
-several games in the slate, the **per-game average is their score**. Your
-**manager points** are the sum of your top-5 lineup, accumulating into a season
-total.
+The game runs on **weekly gameweeks** (ISO Mon–Sun), Sorare-style: you **pick a
+team of 5 cards** (My Team) and their gameweek scores add up to your leaderboard
+points, accumulating into a season total.
+
+Each card scores from its player's **real FIDE rating movement** that week. In
+Elo, beating a higher-rated opponent yields a bigger rating gain — so the score
+**counts the difference in Elo**, and an extra **upset multiplier rewards
+lower-rated players more for the same gain**. A 1600 club player who upsets a
+2500 GM can out-score an elite whose rating barely moved — so lower-rated players
+(search the federation for amateurs like your own club-mates) are genuinely
+worth collecting. When a player has several games that week, the **per-game
+average is their score**.
+
+Card economy: **Common (gray) cards can't be sold or auctioned** — they're the
+grassroots cards you collect and field; **Limited and up are the tradable
+assets**. Packs are rarity-banded: Commons lean toward lower-rated club players,
+while Rare/Super Rare/Unique favour the elite.
 
 - **Leaderboard** — you compete against other managers; the League screen shows
   your rank, points and the pack you're on track to win.

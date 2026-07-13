@@ -26,10 +26,16 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.Holder> {
         void onClick(Card card);
     }
 
+    public interface OnSelectionChanged {
+        void changed(Set<String> selected);
+    }
+
     private final List<Card> cards;
     private final boolean selectable;
     private final OnCardClick listener;
     private final Set<String> selected = new HashSet<>();
+    private int maxSelection = 0;   // 0 = unlimited
+    private OnSelectionChanged selectionListener;
 
     public CardAdapter(List<Card> cards, boolean selectable, OnCardClick listener) {
         this.cards = cards;
@@ -39,6 +45,19 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.Holder> {
 
     public Set<String> getSelectedIds() {
         return selected;
+    }
+
+    public void setMaxSelection(int max) {
+        this.maxSelection = max;
+    }
+
+    public void preselect(java.util.Collection<String> ids) {
+        selected.clear();
+        if (ids != null) selected.addAll(ids);
+    }
+
+    public void setSelectionListener(OnSelectionChanged l) {
+        this.selectionListener = l;
     }
 
     @NonNull
@@ -62,8 +81,16 @@ public class CardAdapter extends RecyclerView.Adapter<CardAdapter.Holder> {
 
         holder.itemView.setOnClickListener(v -> {
             if (selectable) {
-                if (!selected.remove(card.id)) selected.add(card.id);
+                if (!selected.remove(card.id)) {
+                    if (maxSelection > 0 && selected.size() >= maxSelection) {
+                        android.widget.Toast.makeText(v.getContext(),
+                                "You can pick " + maxSelection + " players", android.widget.Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    selected.add(card.id);
+                }
                 notifyItemChanged(holder.getBindingAdapterPosition());
+                if (selectionListener != null) selectionListener.changed(selected);
             } else if (listener != null) {
                 listener.onClick(card);
             }

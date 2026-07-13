@@ -79,6 +79,10 @@ public class HomeFragment extends Fragment implements Refreshable {
         spin.setOnClickListener(v ->
                 startActivity(new Intent(requireContext(), SpinActivity.class)));
 
+        Button team = view.findViewById(R.id.home_btn_team);
+        team.setOnClickListener(v ->
+                startActivity(new Intent(requireContext(), TeamActivity.class)));
+
         Button league = view.findViewById(R.id.home_btn_league);
         league.setOnClickListener(v ->
                 startActivity(new Intent(requireContext(), LeaderboardActivity.class)));
@@ -107,9 +111,17 @@ public class HomeFragment extends Fragment implements Refreshable {
         gameweek.setText("Gameweek " + repo.currentGameweekId()
                 + " · #" + repo.myLeaderboardRank() + " of " + (GameRepository.RIVAL_COUNT + 1));
         TextView gwPoints = view.findViewById(R.id.home_gw_points);
+        String teamNote = repo.teamSize() > 0
+                ? repo.teamSize() + "/" + GameRepository.LINEUP_SIZE + " in your team"
+                : "no team picked — tap My Team";
         gwPoints.setText(repo.managerGameweekPoints() + " pts · ends in "
                 + Format.timeLeft(repo.gameweekRemainingMs())
-                + " · " + repo.myPlayersWithGames() + " of your players have games");
+                + " · " + teamNote);
+
+        Button teamBtn = view.findViewById(R.id.home_btn_team);
+        teamBtn.setText(repo.teamSize() > 0
+                ? getString(R.string.my_team) + " (" + repo.teamSize() + "/" + GameRepository.LINEUP_SIZE + ")"
+                : "Pick your team (5)");
 
         // Show the result of a gameweek that just closed, once.
         String summary = repo.consumeLastGwSummary();

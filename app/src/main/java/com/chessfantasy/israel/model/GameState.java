@@ -59,6 +59,8 @@ public class GameState {
     public List<RivalManager> rivals = new ArrayList<>();
     /** One-shot summary of the last closed gameweek, shown once then cleared. */
     public String lastGwSummary = "";
+    /** The user's chosen 5-card team (Sorare-style lineup), by card id. */
+    public List<String> teamCardIds = new ArrayList<>();
 
     /** Firebase anonymous user id, once signed in (empty otherwise). */
     public String firebaseUid = "";

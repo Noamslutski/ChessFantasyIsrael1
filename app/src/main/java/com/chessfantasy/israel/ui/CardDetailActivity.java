@@ -114,10 +114,14 @@ public class CardDetailActivity extends AppCompatActivity {
         }
 
         boolean listed = activeAuction != null || activeSale != null;
-        sell.setVisibility(listed ? View.GONE : View.VISIBLE);
-        auction.setVisibility(listed ? View.GONE : View.VISIBLE);
+        boolean tradable = card.rarity != com.chessfantasy.israel.model.Rarity.COMMON;
+        sell.setVisibility(listed || !tradable ? View.GONE : View.VISIBLE);
+        auction.setVisibility(listed || !tradable ? View.GONE : View.VISIBLE);
         cancel.setVisibility(listed ? View.VISIBLE : View.GONE);
-        listedNote.setVisibility(listed ? View.VISIBLE : View.GONE);
+        listedNote.setVisibility(listed || !tradable ? View.VISIBLE : View.GONE);
+        if (!listed && !tradable) {
+            listedNote.setText("Common cards can't be sold — collect them, play them in your team, but Limited and up are the tradable assets.");
+        }
 
         if (activeAuction != null) {
             final Auction a = activeAuction;
