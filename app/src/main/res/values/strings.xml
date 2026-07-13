@@ -60,6 +60,10 @@
     <string name="il_profile">chess.org.il profile</string>
     <string name="real_games">Real games (PGN)</string>
     <string name="players_sources">Live ratings from FIDE, the Israeli Chess Federation (chess.org.il) and chess.com</string>
+    <string name="load_all_israel">Load ALL FIDE-rated Israeli players</string>
+    <string name="loading_all_israel">Downloading FIDE rating list…</string>
+    <string name="search_players">Search players by name…</string>
+    <string name="load_all_warning">This downloads FIDE\'s full rating list (~large, one-time) and adds every Israeli-federation rated player — thousands, from grandmasters to club players. Continue?</string>
 
     <!-- Form rewards from real games -->
     <string name="form_claim">Claim form bonus</string>

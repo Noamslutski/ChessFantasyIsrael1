@@ -18,22 +18,57 @@
         android:id="@+id/players_subtitle"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/club_name_hebrew"
+        android:text="@string/players_sources"
         android:textColor="@color/gold"
-        android:textSize="14sp" />
+        android:textSize="13sp" />
+
+    <TextView
+        android:id="@+id/players_count"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp" />
 
     <Button
         android:id="@+id/players_btn_refresh"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="6dp"
         android:text="@string/refresh_ratings" />
+
+    <Button
+        android:id="@+id/players_btn_load_all"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/load_all_israel" />
+
+    <ProgressBar
+        android:id="@+id/players_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:max="100"
+        android:visibility="gone" />
+
+    <EditText
+        android:id="@+id/players_search"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:hint="@string/search_players"
+        android:importantForAutofill="no"
+        android:inputType="text"
+        android:textColor="@color/text_primary"
+        android:textColorHint="@color/text_secondary" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/players_recycler"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_marginTop="8dp"
+        android:layout_marginTop="6dp"
         android:layout_weight="1"
         android:clipToPadding="false" />
 </LinearLayout>

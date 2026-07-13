@@ -84,6 +84,23 @@ All are **keyless**. The design is a pluggable `RatingProvider` interface
 orchestrated by `api/RatingService` — adding another source (e.g. a
 chess-results.com team feed) is one new class.
 
+### 🇮🇱 Load *every* FIDE-rated Israeli player
+The Players tab has a **"Load ALL FIDE-rated Israeli players"** button. It
+streams FIDE's full monthly rating list
+(`ratings.fide.com/download/standard_rating_list_xml.zip`), filters it to
+federation **ISR**, and adds every rated Israeli player — thousands, from the
+grandmasters down to club and junior players — to the playable pool
+(`api/FideFullListLoader`).
+
+Because the list is large, it is **streamed**: the zip is unzipped on the fly
+and parsed one `<player>` block at a time (never fully held in memory), keeping
+only ISR rated players, and the result is cached to app-private storage so it is
+downloaded only when you ask and survives restarts. Downloaded players merge
+with the curated roster (deduped by FIDE ID — curated entries keep their Hebrew
+names, achievements and chess.org.il IDs), become mintable in packs, and get
+their real FIDE rating straight from the list. A **search box** on the Players
+tab keeps the now-huge list navigable.
+
 Each source **fails independently and gracefully**: a player is matched by
 `fideId`/`ilId`/`chessComUser` from `players.json`, and if a source is
 unreachable or a field is missing the app just uses the next source, falling
@@ -139,9 +156,10 @@ app/src/main/java/com/chessfantasy/israel/
 │   ├── GameRepository.java      # game logic: minting caps, packs, market
 │   │                            # simulation, trades, rewards, persistence
 │   └── PlayerCatalog.java       # loads players.json
-├── api/                         # multi-source live ratings:
-│                                # RatingService orchestrates FideProvider,
-│                                # IsraeliChessProvider, ChessComProvider
+├── api/                         # RatingService orchestrates FideProvider,
+│                                # IsraeliChessProvider, ChessComProvider;
+│                                # FideFullListLoader streams FIDE's full list
+│                                # and filters it to federation ISR
 └── ui/                          # fragments, adapters, pack opening,
                                  # rewarded ad, trade offer, card detail
 ```

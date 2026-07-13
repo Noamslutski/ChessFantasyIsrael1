@@ -26,10 +26,16 @@ import java.util.Locale;
 
 public class PlayerAdapter extends RecyclerView.Adapter<PlayerAdapter.Holder> {
 
-    private final List<Player> players;
+    private List<Player> players;
 
     public PlayerAdapter(List<Player> players) {
         this.players = players;
+    }
+
+    /** Replaces the whole visible list (used by search / pool reload). */
+    public void setPlayers(List<Player> newPlayers) {
+        this.players = newPlayers;
+        notifyDataSetChanged();
     }
 
     @NonNull

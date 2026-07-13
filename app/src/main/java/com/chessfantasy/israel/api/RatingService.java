@@ -56,7 +56,9 @@ public class RatingService {
     public void refreshAll(Callback callback) {
         executor.execute(() -> {
             GameRepository repo = GameRepository.get();
-            List<Player> players = repo.getPlayers();
+            // Only the curated roster gets per-player multi-source lookups; the
+            // downloaded FIDE Israel pool already carries real FIDE ratings.
+            List<Player> players = repo.getCoreRoster();
             List<PlayerRatings> collected = new ArrayList<>();
             List<String> playerIds = new ArrayList<>();
             Summary summary = new Summary();

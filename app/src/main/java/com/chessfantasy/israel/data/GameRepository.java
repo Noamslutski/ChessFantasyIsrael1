@@ -3,6 +3,7 @@ package com.chessfantasy.israel.data;
 import android.content.Context;
 import android.content.SharedPreferences;
 
+import com.chessfantasy.israel.api.FideFullListLoader;
 import com.chessfantasy.israel.model.Auction;
 import com.chessfantasy.israel.model.Card;
 import com.chessfantasy.israel.model.GameState;
@@ -20,6 +21,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
@@ -50,8 +52,17 @@ public class GameRepository {
     private final Random random = new Random();
 
     private GameState state;
+    private Context appContext;
+    /** The bundled, hand-curated notable players (from players.json). */
     private List<Player> roster;
-    private String clubName = "Hapoel Petah Tikva Chess";
+    /** Optionally-downloaded full FIDE Israel pool (thousands of players). */
+    private List<Player> pool = new ArrayList<>();
+    /** roster + pool, deduped by fideId; the full playable set. */
+    private List<Player> combined;
+    /** Fast id -> player lookup over {@link #combined}. */
+    private Map<String, Player> playerIndex = new java.util.HashMap<>();
+    private long poolUpdatedAt;
+    private String clubName = "Israel National Chess Pool";
     private String clubNameHebrew = "";
 
     public static synchronized void init(Context context) {
@@ -65,12 +76,14 @@ public class GameRepository {
     }
 
     private GameRepository(Context context) {
+        appContext = context.getApplicationContext();
         prefs = context.getSharedPreferences("chess_fantasy", Context.MODE_PRIVATE);
         PlayerCatalog.CatalogFile catalog = PlayerCatalog.load(context);
         roster = catalog.players;
         if (catalog.club != null && !catalog.club.isEmpty()) clubName = catalog.club;
         if (catalog.clubHebrew != null) clubNameHebrew = catalog.clubHebrew;
         load();
+        reloadPoolInternal();
         ensureSeeded();
         ensureBaselines();
         tick();
@@ -117,13 +130,74 @@ public class GameRepository {
         return clubNameHebrew;
     }
 
+    /** The full playable set: curated roster + any downloaded FIDE Israel pool. */
     public List<Player> getPlayers() {
+        return combined;
+    }
+
+    /** Only the curated players — used for the per-player live-rating refresh. */
+    public List<Player> getCoreRoster() {
         return roster;
     }
 
     public Player getPlayer(String playerId) {
-        for (Player p : roster) if (p.id.equals(playerId)) return p;
+        Player p = playerIndex.get(playerId);
+        if (p != null) return p;
+        // Fallback (index built lazily/robustly)
+        for (Player q : combined) if (q.id.equals(playerId)) return q;
         return null;
+    }
+
+    // ------------------------------------------------------- downloaded pool
+
+    public int poolCount() {
+        return pool.size();
+    }
+
+    public long poolUpdatedAt() {
+        return poolUpdatedAt;
+    }
+
+    public boolean hasPool() {
+        return !pool.isEmpty();
+    }
+
+    /** Re-reads the cached FIDE Israel pool from disk and rebuilds the player set. */
+    public void reloadPool() {
+        reloadPoolInternal();
+        ensureBaselines();
+    }
+
+    private void reloadPoolInternal() {
+        try {
+            FideFullListLoader.Pool cached = new FideFullListLoader(appContext).loadCached();
+            pool = cached.players != null ? cached.players : new ArrayList<>();
+            poolUpdatedAt = cached.updatedAt;
+        } catch (Exception e) {
+            pool = new ArrayList<>();
+            poolUpdatedAt = 0;
+        }
+        buildCombined();
+    }
+
+    /** Merges roster + pool, deduped by fideId (curated entries win). */
+    private void buildCombined() {
+        List<Player> merged = new ArrayList<>(roster);
+        java.util.Set<Long> coreFideIds = new java.util.HashSet<>();
+        java.util.Set<String> coreIds = new java.util.HashSet<>();
+        for (Player p : roster) {
+            if (p.fideId > 0) coreFideIds.add(p.fideId);
+            coreIds.add(p.id);
+        }
+        for (Player p : pool) {
+            if (p.fideId > 0 && coreFideIds.contains(p.fideId)) continue;
+            if (coreIds.contains(p.id)) continue;
+            merged.add(p);
+        }
+        merged.sort((a, b) -> Integer.compare(ratingOf(b), ratingOf(a)));
+        combined = merged;
+        playerIndex = new java.util.HashMap<>();
+        for (Player p : combined) playerIndex.put(p.id, p);
     }
 
     /** Never returns null — cards whose player was removed from players.json still render. */
@@ -238,7 +312,7 @@ public class GameRepository {
     }
 
     public boolean canMintAny(Rarity rarity) {
-        for (Player p : roster) if (remainingSupply(p.id, rarity) > 0) return true;
+        for (Player p : combined) if (remainingSupply(p.id, rarity) > 0) return true;
         return false;
     }
 
@@ -254,8 +328,8 @@ public class GameRepository {
     }
 
     public Card mintRandom(Rarity rarity, String owner) {
-        if (roster.isEmpty()) return null;
-        List<Player> shuffled = new ArrayList<>(roster);
+        if (combined.isEmpty()) return null;
+        List<Player> shuffled = new ArrayList<>(combined);
         Collections.shuffle(shuffled, random);
         for (Player p : shuffled) {
             Card card = mintCard(p.id, rarity, owner);
