@@ -18,6 +18,9 @@ public class GameState {
     public List<TradeOffer> offers = new ArrayList<>();
     /** Players added via the online federation search, persisted with the game. */
     public List<Player> addedPlayers = new ArrayList<>();
+    /** Real names pulled from the federation API, overriding bundled ones. key = playerId */
+    public Map<String, String> nameOverrides = new HashMap<>();
+    public Map<String, String> hebrewOverrides = new HashMap<>();
 
     /** Owned, unopened packs: key = PackType.name() -> count. */
     public Map<String, Integer> packInventory = new HashMap<>();

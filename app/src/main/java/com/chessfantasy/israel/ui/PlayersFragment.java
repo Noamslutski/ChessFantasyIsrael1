@@ -180,14 +180,24 @@ public class PlayersFragment extends Fragment implements Refreshable {
         new AlertDialog.Builder(requireContext())
                 .setTitle("Add players to your game")
                 .setMultiChoiceItems(labels, checked, (d, which, isChecked) -> checked[which] = isChecked)
-                .setPositiveButton("Add", (d, w) -> {
+                .setPositiveButton("Add / fix names", (d, w) -> {
                     List<Player> chosen = new ArrayList<>();
                     for (int i = 0; i < results.size(); i++) if (checked[i]) chosen.add(results.get(i));
-                    int added = GameRepository.get().addPlayers(chosen);
-                    Toast.makeText(requireContext(),
-                            added > 0 ? "Added " + added + " player" + (added == 1 ? "" : "s")
-                                    : "Those players are already in your game",
-                            Toast.LENGTH_LONG).show();
+                    int[] result = GameRepository.get().mergeSearched(chosen);
+                    int added = result[0], fixed = result[1];
+                    String msg;
+                    if (added == 0 && fixed == 0) {
+                        msg = "No changes — already up to date";
+                    } else {
+                        StringBuilder sb = new StringBuilder();
+                        if (added > 0) sb.append("Added ").append(added).append(" player").append(added == 1 ? "" : "s");
+                        if (fixed > 0) {
+                            if (sb.length() > 0) sb.append(", ");
+                            sb.append("corrected ").append(fixed).append(" name").append(fixed == 1 ? "" : "s");
+                        }
+                        msg = sb.toString();
+                    }
+                    Toast.makeText(requireContext(), msg, Toast.LENGTH_LONG).show();
                     refreshData();
                 })
                 .setNegativeButton("Cancel", null)

@@ -103,6 +103,22 @@ public class GameRepository {
             }
         }
         if (state == null) state = new GameState();
+        // Gson does NOT run field initializers for keys missing from an older
+        // saved JSON, so newly-added collections come back null. Guard them all
+        // or the first grantPack/addPlayers/applyRatings will NPE on upgrade.
+        if (state.cards == null) state.cards = new java.util.HashMap<>();
+        if (state.auctions == null) state.auctions = new ArrayList<>();
+        if (state.sales == null) state.sales = new ArrayList<>();
+        if (state.offers == null) state.offers = new ArrayList<>();
+        if (state.addedPlayers == null) state.addedPlayers = new ArrayList<>();
+        if (state.nameOverrides == null) state.nameOverrides = new java.util.HashMap<>();
+        if (state.hebrewOverrides == null) state.hebrewOverrides = new java.util.HashMap<>();
+        if (state.packInventory == null) state.packInventory = new java.util.HashMap<>();
+        if (state.mintCounts == null) state.mintCounts = new java.util.HashMap<>();
+        if (state.ratingOverrides == null) state.ratingOverrides = new java.util.HashMap<>();
+        if (state.liveRatings == null) state.liveRatings = new java.util.HashMap<>();
+        if (state.ratingBaselines == null) state.ratingBaselines = new java.util.HashMap<>();
+        if (state.resolvedFideIds == null) state.resolvedFideIds = new java.util.HashMap<>();
         if (state.season == null || state.season.isEmpty()) {
             state.season = String.valueOf(Calendar.getInstance().get(Calendar.YEAR));
         }
@@ -215,10 +231,70 @@ public class GameRepository {
             ids.add(p.id);
             merged.add(p);
         }
+        // Apply real names fetched from the federation API over bundled ones.
+        for (Player p : merged) {
+            String realName = state.nameOverrides.get(p.id);
+            if (realName != null && !realName.isEmpty()) p.name = realName;
+            String realHebrew = state.hebrewOverrides.get(p.id);
+            if (realHebrew != null && !realHebrew.isEmpty()) p.hebrewName = realHebrew;
+        }
         merged.sort((a, b) -> Integer.compare(ratingOf(b), ratingOf(a)));
         combined = merged;
         playerIndex = new java.util.HashMap<>();
         for (Player p : combined) playerIndex.put(p.id, p);
+    }
+
+    /**
+     * Merges players returned by the online federation search: corrects the
+     * real name (and Hebrew name) of players already in the game (matched by
+     * FIDE id, federation id, or name), and adds any that are new. Returns
+     * {added, corrected}.
+     */
+    public int[] mergeSearched(List<Player> searched) {
+        if (searched == null || searched.isEmpty()) return new int[]{0, 0};
+        int corrected = 0;
+        List<Player> toAdd = new ArrayList<>();
+        for (Player s : searched) {
+            if (s == null) continue;
+            Player existing = findExisting(s);
+            if (existing != null) {
+                boolean changed = false;
+                if (s.name != null && !s.name.isEmpty() && !s.name.equals(existing.name)) {
+                    state.nameOverrides.put(existing.id, s.name);
+                    changed = true;
+                }
+                if (s.hebrewName != null && !s.hebrewName.isEmpty()
+                        && !s.hebrewName.equals(existing.hebrewName)) {
+                    state.hebrewOverrides.put(existing.id, s.hebrewName);
+                    changed = true;
+                }
+                if (changed) corrected++;
+            } else {
+                toAdd.add(s);
+            }
+        }
+        int added = toAdd.isEmpty() ? 0 : addPlayers(toAdd); // addPlayers saves + rebuilds
+        if (corrected > 0) {
+            buildCombined();
+            save();
+        }
+        return new int[]{added, corrected};
+    }
+
+    /** Finds a player already in the game matching a searched result. */
+    private Player findExisting(Player s) {
+        if (s.fideId > 0) {
+            for (Player p : combined) if (p.fideId == s.fideId) return p;
+        }
+        if (s.ilId > 0) {
+            for (Player p : combined) if (p.ilId > 0 && p.ilId == s.ilId) return p;
+        }
+        if (s.name != null && !s.name.isEmpty()) {
+            for (Player p : combined) {
+                if (p.name != null && p.name.equalsIgnoreCase(s.name)) return p;
+            }
+        }
+        return null;
     }
 
     /**

@@ -7,7 +7,7 @@
       "achievements": "World Championship challenger 2012 · Candidates winner 2011 · Israel #1" },
     { "id": "rodshtein",    "name": "Maxim Rodshtein",     "hebrewName": "מקסים רודשטיין",    "title": "GM",  "rating": 2622, "fideId": 2806851,  "ilId": 10942, "chessComUser": "",
       "achievements": "Israeli champion 2006 · World U16 champion 2004 · peak 2710" },
-    { "id": "nabaty",       "name": "Tamir Nabaty",        "hebrewName": "תמיר נבטי",         "title": "GM",  "rating": 2613, "fideId": 2809052,  "ilId": 10588, "chessComUser": "",
+    { "id": "nabaty",       "name": "Tamir Nabaty",        "hebrewName": "תמיר נבאתי",        "title": "GM",  "rating": 2613, "fideId": 2809052,  "ilId": 10588, "chessComUser": "",
       "achievements": "4× Israeli champion (2013, 2016, 2019, 2021) · peak world #46" },
     { "id": "sutovsky",     "name": "Emil Sutovsky",       "hebrewName": "אמיל סוטובסקי",     "title": "GM",  "rating": 2590, "fideId": 2802007,  "ilId": 7368,  "chessComUser": "",
       "achievements": "World Junior champion 1996 · Hastings 2000 winner · FIDE CEO" },
