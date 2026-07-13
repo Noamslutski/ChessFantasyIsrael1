@@ -6,6 +6,8 @@ import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -24,6 +26,8 @@ import com.chessfantasy.israel.util.Format;
 public class PacksFragment extends Fragment implements Refreshable {
 
     private RecyclerView recycler;
+    private LinearLayout ownedContainer;
+    private TextView ownedTitle;
 
     @Nullable
     @Override
@@ -36,6 +40,8 @@ public class PacksFragment extends Fragment implements Refreshable {
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         recycler = view.findViewById(R.id.packs_recycler);
         recycler.setLayoutManager(new LinearLayoutManager(requireContext()));
+        ownedContainer = view.findViewById(R.id.packs_owned_container);
+        ownedTitle = view.findViewById(R.id.packs_owned_title);
 
         Button ad = view.findViewById(R.id.packs_btn_ad);
         ad.setOnClickListener(v -> {
@@ -58,6 +64,65 @@ public class PacksFragment extends Fragment implements Refreshable {
     public void refreshData() {
         if (recycler == null || !isAdded()) return;
         recycler.setAdapter(new PackAdapter());
+        buildOwnedPacks();
+    }
+
+    /** Populates the "Your packs" section from the pack inventory. */
+    private void buildOwnedPacks() {
+        GameRepository repo = GameRepository.get();
+        ownedContainer.removeAllViews();
+        boolean any = false;
+        LayoutInflater inflater = LayoutInflater.from(requireContext());
+        for (PackType type : PackType.values()) {
+            int count = repo.packCount(type);
+            if (count <= 0) continue;
+            any = true;
+            View row = inflater.inflate(R.layout.item_owned_pack, ownedContainer, false);
+            row.setBackgroundResource(CardAdapter.backgroundFor(type.tier));
+            int primary = CardAdapter.textColorFor(type.tier);
+            int secondary = CardAdapter.secondaryTextColorFor(type.tier);
+
+            TextView name = row.findViewById(R.id.owned_name);
+            TextView desc = row.findViewById(R.id.owned_desc);
+            TextView countView = row.findViewById(R.id.owned_count);
+            ImageView icon = row.findViewById(R.id.owned_icon);
+            Button open = row.findViewById(R.id.owned_btn_open);
+
+            name.setText(type.displayName);
+            name.setTextColor(primary);
+            desc.setText(descriptionFor(type));
+            desc.setTextColor(secondary);
+            countView.setText("×" + count);
+            countView.setTextColor(primary);
+            icon.setColorFilter(primary);
+            open.setOnClickListener(v -> openOwnedPack(type));
+
+            ownedContainer.addView(row);
+        }
+        ownedTitle.setVisibility(any ? View.VISIBLE : View.GONE);
+    }
+
+    private void openOwnedPack(PackType type) {
+        Intent intent = new Intent(requireContext(), PackOpeningActivity.class);
+        intent.putExtra(PackOpeningActivity.EXTRA_MODE, PackOpeningActivity.MODE_INVENTORY);
+        intent.putExtra(PackOpeningActivity.EXTRA_PACK, type.name());
+        startActivity(intent);
+    }
+
+    private String descriptionFor(PackType type) {
+        switch (type) {
+            case LIMITED_PACK:
+                return getString(R.string.pack_limited_desc);
+            case RARE_PACK:
+                return getString(R.string.pack_rare_desc);
+            case SUPER_RARE_PACK:
+                return getString(R.string.pack_super_rare_desc);
+            case UNIQUE_PACK:
+                return getString(R.string.pack_unique_desc);
+            case FREE:
+            default:
+                return getString(R.string.pack_free_desc);
+        }
     }
 
     private void onPackClicked(PackType type) {

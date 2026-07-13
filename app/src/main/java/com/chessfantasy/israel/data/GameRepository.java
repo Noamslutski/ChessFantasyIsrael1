@@ -40,6 +40,7 @@ public class GameRepository {
     };
 
     public static final long FREE_PACK_COOLDOWN_MS = TimeUnit.HOURS.toMillis(4);
+    public static final long SPIN_COOLDOWN_MS = TimeUnit.HOURS.toMillis(24);
     public static final int ADS_PER_DAY = 10;
     public static final long AD_BONUS_PAWNS = 25;
     /** Chance that a rewarded ad upgrades the prize to a Limited ("Pro") card. */
@@ -85,6 +86,7 @@ public class GameRepository {
         load();
         reloadPoolInternal();
         ensureSeeded();
+        ensureStarterPacks();
         ensureBaselines();
         tick();
     }
@@ -113,10 +115,22 @@ public class GameRepository {
     private void ensureSeeded() {
         if (state.seeded) return;
         state.seeded = true;
-        // Starter collection so the app feels alive on first launch.
-        for (int i = 0; i < 4; i++) mintRandom(Rarity.COMMON, USER_ID);
-        mintRandom(Rarity.LIMITED, USER_ID);
+        // A couple of starter cards so the market feels alive on first launch.
+        for (int i = 0; i < 2; i++) mintRandom(Rarity.COMMON, USER_ID);
         replenishBotListings();
+        save();
+    }
+
+    /**
+     * Grants 3 welcome packs to a new account (and once to existing accounts
+     * that predate this feature): a Free, a Limited and a Rare pack to open.
+     */
+    private void ensureStarterPacks() {
+        if (state.starterPacksGranted) return;
+        state.starterPacksGranted = true;
+        grantPack(PackType.FREE, 1);
+        grantPack(PackType.LIMITED_PACK, 1);
+        grantPack(PackType.RARE_PACK, 1);
         save();
     }
 
@@ -452,6 +466,80 @@ public class GameRepository {
         }
         save();
         return cards;
+    }
+
+    // -------------------------------------------------------- pack inventory
+
+    /** Adds owned, unopened packs of a tier (from spins, rewards, gifts). */
+    public void grantPack(PackType type, int n) {
+        if (type == null || n <= 0) return;
+        String key = type.name();
+        Integer have = state.packInventory.get(key);
+        state.packInventory.put(key, (have != null ? have : 0) + n);
+        save();
+    }
+
+    public int packCount(PackType type) {
+        Integer n = state.packInventory.get(type.name());
+        return n != null ? n : 0;
+    }
+
+    public int totalPackCount() {
+        int total = 0;
+        for (Integer n : state.packInventory.values()) if (n != null) total += n;
+        return total;
+    }
+
+    /** Opens one owned pack of {@code type} from the inventory. Null if none/sold out. */
+    public List<Card> openInventoryPack(PackType type) {
+        if (packCount(type) <= 0) return null;
+        for (Rarity r : type.contents) {
+            if (r.isLimitedSupply() && !canMintAny(r)) return null;
+        }
+        state.packInventory.put(type.name(), packCount(type) - 1);
+        List<Card> cards = new ArrayList<>();
+        for (Rarity r : type.contents) {
+            Card c = mintRandom(r, USER_ID);
+            if (c != null) cards.add(c);
+        }
+        save();
+        return cards;
+    }
+
+    // ---------------------------------------------------------- daily spin
+
+    public boolean spinAvailable() {
+        return spinRemainingMs() <= 0;
+    }
+
+    public long spinRemainingMs() {
+        long elapsed = System.currentTimeMillis() - state.lastSpinAt;
+        return Math.max(0, SPIN_COOLDOWN_MS - elapsed);
+    }
+
+    /** Order of the wheel segments (also drives the wheel drawing). */
+    public static final PackType[] SPIN_SEGMENTS = {
+            PackType.FREE, PackType.LIMITED_PACK, PackType.RARE_PACK,
+            PackType.SUPER_RARE_PACK, PackType.UNIQUE_PACK
+    };
+
+    /**
+     * Performs the daily spin: picks a weighted-random pack tier, grants it to
+     * the inventory and starts the 24h cooldown. Returns the tier won, or null
+     * if the spin isn't available yet.
+     */
+    public PackType spin() {
+        if (!spinAvailable()) return null;
+        state.lastSpinAt = System.currentTimeMillis();
+        double r = random.nextDouble();
+        PackType won;
+        if (r < 0.45) won = PackType.FREE;
+        else if (r < 0.80) won = PackType.LIMITED_PACK;
+        else if (r < 0.95) won = PackType.RARE_PACK;
+        else if (r < 0.99) won = PackType.SUPER_RARE_PACK;
+        else won = PackType.UNIQUE_PACK;
+        grantPack(won, 1); // grantPack saves
+        return won;
     }
 
     // -------------------------------------------------------------------- ads

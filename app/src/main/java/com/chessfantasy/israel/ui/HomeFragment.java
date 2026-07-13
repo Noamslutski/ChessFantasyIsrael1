@@ -74,6 +74,10 @@ public class HomeFragment extends Fragment implements Refreshable {
             }
             startActivity(new Intent(requireContext(), AdActivity.class));
         });
+
+        Button spin = view.findViewById(R.id.home_btn_spin);
+        spin.setOnClickListener(v ->
+                startActivity(new Intent(requireContext(), SpinActivity.class)));
     }
 
     @Override
@@ -113,6 +117,22 @@ public class HomeFragment extends Fragment implements Refreshable {
         formInfo.setText(claimable > 0
                 ? "Your players gained rating in real games — " + Format.pawns(claimable) + " Pawns waiting!"
                 : "Form bonus: earn Pawns when your players win real games (rating goes up). Refresh live ratings on the Players tab.");
+
+        Button spin = view.findViewById(R.id.home_btn_spin);
+        boolean spinReady = repo.spinAvailable();
+        spin.setText(spinReady ? getString(R.string.daily_spin) + " — ready!"
+                : "Daily Spin in " + Format.timeLeft(repo.spinRemainingMs()));
+
+        TextView packsBanner = view.findViewById(R.id.home_packs_banner);
+        int pending = repo.totalPackCount();
+        StringBuilder banner = new StringBuilder();
+        if (pending > 0) banner.append(getString(R.string.starter_packs_ready, pending));
+        if (spinReady) {
+            if (banner.length() > 0) banner.append("   ");
+            banner.append(getString(R.string.spin_ready));
+        }
+        packsBanner.setText(banner.toString());
+        packsBanner.setVisibility(banner.length() > 0 ? View.VISIBLE : View.GONE);
 
         Button freePack = view.findViewById(R.id.home_btn_free_pack);
         long remaining = repo.freePackRemainingMs();

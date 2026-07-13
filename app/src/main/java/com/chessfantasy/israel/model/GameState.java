@@ -10,6 +10,7 @@ public class GameState {
     public long pawns = 3000;
     public String season = "";
     public boolean seeded = false;
+    public boolean starterPacksGranted = false;
 
     public Map<String, Card> cards = new HashMap<>();
     public List<Auction> auctions = new ArrayList<>();
@@ -17,6 +18,11 @@ public class GameState {
     public List<TradeOffer> offers = new ArrayList<>();
     /** Players added via the online federation search, persisted with the game. */
     public List<Player> addedPlayers = new ArrayList<>();
+
+    /** Owned, unopened packs: key = PackType.name() -> count. */
+    public Map<String, Integer> packInventory = new HashMap<>();
+    /** Epoch millis of the last daily spin (0 = never). */
+    public long lastSpinAt = 0;
 
     /** key = season:playerId:rarity -> cards minted so far */
     public Map<String, Integer> mintCounts = new HashMap<>();

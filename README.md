@@ -41,6 +41,11 @@ list cards, outbid you, buy your listings at fair prices and answer your trade
 offers based on real card value.
 
 ### 🎁 Packs & rewards
+- **Welcome gift** — a new account starts with **3 packs to open** (a Free, a
+  Limited and a Rare pack), shown under "Your packs" on the Packs tab
+- **Daily Spin** 🎡 — once every 24 hours, spin the wheel to win a free pack;
+  it can land anywhere from Common up to a Unique (weighted toward the common
+  tiers). The won pack opens right after the wheel stops.
 - **Free Pack** (gray) — 3 Commons, every 4 hours
 - **Limited / Rare / Super Rare / Unique packs** — priced in Pawns, colored by tier
 - **Rewarded ads** — watch a (simulated) 15-second ad for a free reward pack:

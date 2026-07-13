@@ -17,12 +17,20 @@
     <string name="daily_reward_claimed">Daily reward claimed — come back tomorrow!</string>
     <string name="watch_ad">Watch ad — free pack</string>
     <string name="free_pack_ready">Open free pack</string>
+    <string name="daily_spin">Daily Spin</string>
+    <string name="daily_spin_desc">Spin once every 24 hours to win a free pack — anything from Common up to a Unique!</string>
+    <string name="spin_now">SPIN</string>
+    <string name="spin_ready">🎡 Daily spin ready!</string>
     <string name="collection_score">Collection score</string>
     <string name="cards_owned">Cards owned</string>
 
     <!-- Packs -->
     <string name="buy">Buy</string>
     <string name="open_pack">Open pack</string>
+    <string name="your_packs">Your packs</string>
+    <string name="store_packs">Store</string>
+    <string name="open">Open</string>
+    <string name="starter_packs_ready">🎁 %1$d welcome packs to open!</string>
     <string name="pack_free_desc">3 Common cards · always gray, always free</string>
     <string name="pack_limited_desc">2 Common + 1 Limited card</string>
     <string name="pack_rare_desc">2 Limited + 1 Rare card</string>

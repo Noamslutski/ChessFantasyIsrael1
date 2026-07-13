@@ -36,6 +36,7 @@ public class PackOpeningActivity extends AppCompatActivity {
     public static final String MODE_BUY = "buy";
     public static final String MODE_FREE = "free";
     public static final String MODE_REVEAL = "reveal";
+    public static final String MODE_INVENTORY = "inventory";
 
     private boolean opened = false;
 
@@ -49,7 +50,7 @@ public class PackOpeningActivity extends AppCompatActivity {
         final String finalMode = mode;
 
         PackType type = PackType.FREE;
-        if (MODE_BUY.equals(mode)) {
+        if (MODE_BUY.equals(mode) || MODE_INVENTORY.equals(mode)) {
             try {
                 type = PackType.valueOf(getIntent().getStringExtra(EXTRA_PACK));
             } catch (Exception e) {
@@ -77,6 +78,9 @@ public class PackOpeningActivity extends AppCompatActivity {
         } else if (MODE_FREE.equals(mode)) {
             heading = "Free Pack";
             packName.setText(PackType.FREE.displayName);
+        } else if (MODE_INVENTORY.equals(mode)) {
+            heading = packType.displayName;
+            packName.setText(packType.displayName);
         } else {
             heading = packType.displayName;
             packName.setText(packType.displayName + " · " + Format.pawns(packType.price) + " Pawns");
@@ -119,6 +123,14 @@ public class PackOpeningActivity extends AppCompatActivity {
             List<Card> cards = repo.openFreePack();
             if (cards == null) {
                 Toast.makeText(this, "Free pack in " + Format.timeLeft(repo.freePackRemainingMs()),
+                        Toast.LENGTH_SHORT).show();
+            }
+            return cards;
+        }
+        if (MODE_INVENTORY.equals(mode)) {
+            List<Card> cards = repo.openInventoryPack(packType);
+            if (cards == null) {
+                Toast.makeText(this, "No such pack to open (or supply sold out)",
                         Toast.LENGTH_SHORT).show();
             }
             return cards;
