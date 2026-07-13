@@ -68,6 +68,33 @@ Real-world games drive the gameplay:
   (`ratings.fide.com/profile/{id}`) and their **real rated games in PGN**
   (`ratings.fide.com/view_games.phtml?id={id}`).
 
+### 🔎 Live federation search (parse.bot API)
+The Players tab has a **"Search the Israel federation online"** button. It sends
+the name in the search box to a parse.bot scraper of the Israeli Chess
+Federation database and lets you tick which real players to add to your game
+(they persist and become mintable). Results are parsed defensively — the client
+auto-detects each player's name, rating, FIDE id and title from the response, so
+it adapts to the scraper's exact JSON shape.
+
+**API key (never committed):** the key is injected at build time into
+`BuildConfig.PARSE_API_KEY`. Provide it any of these ways — do **not** hard-code
+it in source:
+
+```bash
+# 1. gradle property on the command line
+./gradlew assembleDebug -PPARSE_API_KEY=your_key_here
+
+# 2. or in local.properties (git-ignored) / ~/.gradle/gradle.properties
+echo 'PARSE_API_KEY=your_key_here' >> local.properties
+
+# 3. or an environment variable
+export PARSE_API_KEY=your_key_here
+```
+
+If no key is set the app still runs — the online-search button simply reports
+that the key isn't configured. Everything else (FIDE, chess.org.il, chess.com,
+the full-list loader) works without it.
+
 ### 📡 Live ratings from multiple real chess data sources
 The Players screen has a **"Refresh live ratings"** button that pulls from
 **three real chess data sources** and merges them per player (tap any player to

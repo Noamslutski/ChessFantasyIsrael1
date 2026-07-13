@@ -64,6 +64,13 @@
         android:textColor="@color/text_primary"
         android:textColorHint="@color/text_secondary" />
 
+    <Button
+        android:id="@+id/players_btn_online"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:text="@string/search_online" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/players_recycler"
         android:layout_width="match_parent"

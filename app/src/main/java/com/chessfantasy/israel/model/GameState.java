@@ -15,6 +15,8 @@ public class GameState {
     public List<Auction> auctions = new ArrayList<>();
     public List<SaleListing> sales = new ArrayList<>();
     public List<TradeOffer> offers = new ArrayList<>();
+    /** Players added via the online federation search, persisted with the game. */
+    public List<Player> addedPlayers = new ArrayList<>();
 
     /** key = season:playerId:rarity -> cards minted so far */
     public Map<String, Integer> mintCounts = new HashMap<>();

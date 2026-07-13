@@ -180,24 +180,61 @@ public class GameRepository {
         buildCombined();
     }
 
-    /** Merges roster + pool, deduped by fideId (curated entries win). */
+    /** Merges roster + search-added players + pool, deduped by fideId/id. */
     private void buildCombined() {
         List<Player> merged = new ArrayList<>(roster);
-        java.util.Set<Long> coreFideIds = new java.util.HashSet<>();
-        java.util.Set<String> coreIds = new java.util.HashSet<>();
+        java.util.Set<Long> fideIds = new java.util.HashSet<>();
+        java.util.Set<String> ids = new java.util.HashSet<>();
         for (Player p : roster) {
-            if (p.fideId > 0) coreFideIds.add(p.fideId);
-            coreIds.add(p.id);
+            if (p.fideId > 0) fideIds.add(p.fideId);
+            ids.add(p.id);
         }
-        for (Player p : pool) {
-            if (p.fideId > 0 && coreFideIds.contains(p.fideId)) continue;
-            if (coreIds.contains(p.id)) continue;
+        // Players the user added via online search rank alongside the curated set.
+        List<Player> extras = new ArrayList<>();
+        if (state != null && state.addedPlayers != null) extras.addAll(state.addedPlayers);
+        extras.addAll(pool);
+        for (Player p : extras) {
+            if (p == null || p.id == null) continue;
+            if (p.fideId > 0 && fideIds.contains(p.fideId)) continue;
+            if (ids.contains(p.id)) continue;
+            if (p.fideId > 0) fideIds.add(p.fideId);
+            ids.add(p.id);
             merged.add(p);
         }
         merged.sort((a, b) -> Integer.compare(ratingOf(b), ratingOf(a)));
         combined = merged;
         playerIndex = new java.util.HashMap<>();
         for (Player p : combined) playerIndex.put(p.id, p);
+    }
+
+    /**
+     * Adds players found via the online federation search to the playable pool.
+     * Returns how many were newly added (duplicates are ignored).
+     */
+    public int addPlayers(List<Player> players) {
+        if (players == null || players.isEmpty()) return 0;
+        java.util.Set<Long> knownFide = new java.util.HashSet<>();
+        java.util.Set<String> knownIds = new java.util.HashSet<>();
+        for (Player p : combined) {
+            if (p.fideId > 0) knownFide.add(p.fideId);
+            knownIds.add(p.id);
+        }
+        int added = 0;
+        for (Player p : players) {
+            if (p == null || p.id == null) continue;
+            if (p.fideId > 0 && knownFide.contains(p.fideId)) continue;
+            if (knownIds.contains(p.id)) continue;
+            state.addedPlayers.add(p);
+            knownIds.add(p.id);
+            if (p.fideId > 0) knownFide.add(p.fideId);
+            added++;
+        }
+        if (added > 0) {
+            buildCombined();
+            ensureBaselines();
+            save();
+        }
+        return added;
     }
 
     /** Never returns null — cards whose player was removed from players.json still render. */

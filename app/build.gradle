@@ -6,12 +6,23 @@ android {
     namespace 'com.chessfantasy.israel'
     compileSdk 34
 
+    // parse.bot player-search API key — never hard-coded. Provide it via
+    // gradle property (-PPARSE_API_KEY=..., local.properties, ~/.gradle) or the
+    // PARSE_API_KEY environment variable. Defaults to empty (feature disabled).
+    def parseApiKey = project.findProperty('PARSE_API_KEY') ?: System.getenv('PARSE_API_KEY') ?: ''
+
     defaultConfig {
         applicationId "com.chessfantasy.israel"
         minSdk 26
         targetSdk 34
         versionCode 1
         versionName "1.0"
+
+        buildConfigField "String", "PARSE_API_KEY", "\"${parseApiKey}\""
+    }
+
+    buildFeatures {
+        buildConfig true
     }
 
     buildTypes {

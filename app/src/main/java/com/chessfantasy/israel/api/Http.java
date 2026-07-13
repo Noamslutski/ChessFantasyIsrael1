@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
 
 /** Tiny blocking HTTP GET helper shared by the rating providers. */
 final class Http {
@@ -17,6 +18,11 @@ final class Http {
 
     /** Returns the response body, or null on any non-200 or error. */
     static String get(String urlString, String accept) {
+        return get(urlString, accept, null);
+    }
+
+    /** As {@link #get(String, String)} but with extra request headers. */
+    static String get(String urlString, String accept, Map<String, String> headers) {
         HttpURLConnection connection = null;
         try {
             URL url = new URL(urlString);
@@ -27,6 +33,11 @@ final class Http {
             if (accept != null) connection.setRequestProperty("Accept", accept);
             connection.setRequestProperty("User-Agent",
                     "ChessFantasyIsrael/1.0 (Android; fantasy chess app)");
+            if (headers != null) {
+                for (Map.Entry<String, String> e : headers.entrySet()) {
+                    connection.setRequestProperty(e.getKey(), e.getValue());
+                }
+            }
             int code = connection.getResponseCode();
             if (code != 200) return null;
             try (InputStream in = connection.getInputStream();

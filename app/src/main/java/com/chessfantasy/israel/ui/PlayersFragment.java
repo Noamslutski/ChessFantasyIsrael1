@@ -21,6 +21,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.chessfantasy.israel.R;
 import com.chessfantasy.israel.api.FideFullListLoader;
+import com.chessfantasy.israel.api.IsraelPlayerSearchApi;
 import com.chessfantasy.israel.api.RatingService;
 import com.chessfantasy.israel.data.GameRepository;
 import com.chessfantasy.israel.model.Player;
@@ -38,6 +39,7 @@ public class PlayersFragment extends Fragment implements Refreshable {
     private PlayerAdapter adapter;
     private Button refreshButton;
     private Button loadAllButton;
+    private Button onlineButton;
     private ProgressBar progress;
     private EditText search;
     private TextView count;
@@ -68,6 +70,9 @@ public class PlayersFragment extends Fragment implements Refreshable {
 
         loadAllButton = view.findViewById(R.id.players_btn_load_all);
         loadAllButton.setOnClickListener(v -> confirmLoadAll());
+
+        onlineButton = view.findViewById(R.id.players_btn_online);
+        onlineButton.setOnClickListener(v -> searchOnline());
 
         search = view.findViewById(R.id.players_search);
         search.addTextChangedListener(new TextWatcher() {
@@ -138,6 +143,55 @@ public class PlayersFragment extends Fragment implements Refreshable {
                             Toast.LENGTH_LONG).show();
                     refreshData();
                 });
+    }
+
+    /** Queries the real Israel federation database (parse.bot API) by name. */
+    private void searchOnline() {
+        String query = search.getText().toString().trim();
+        if (query.isEmpty()) {
+            Toast.makeText(requireContext(), "Type a name, then search online", Toast.LENGTH_SHORT).show();
+            return;
+        }
+        onlineButton.setEnabled(false);
+        onlineButton.setText(R.string.searching_online);
+        new IsraelPlayerSearchApi().search(query, (players, error) -> {
+            if (!isAdded()) return;
+            onlineButton.setEnabled(true);
+            onlineButton.setText(R.string.search_online);
+            if (error != null && (players == null || players.isEmpty())) {
+                Toast.makeText(requireContext(), error, Toast.LENGTH_LONG).show();
+                return;
+            }
+            showResultsDialog(players);
+        });
+    }
+
+    private void showResultsDialog(List<Player> results) {
+        String[] labels = new String[results.size()];
+        boolean[] checked = new boolean[results.size()];
+        for (int i = 0; i < results.size(); i++) {
+            Player p = results.get(i);
+            String title = p.title == null || p.title.isEmpty() ? "" : p.title + " ";
+            String hebrew = p.hebrewName != null && !p.hebrewName.isEmpty()
+                    && !p.hebrewName.equals(p.name) ? "  " + p.hebrewName : "";
+            labels[i] = title + p.name + "  (" + p.rating + ")" + hebrew;
+            checked[i] = true;
+        }
+        new AlertDialog.Builder(requireContext())
+                .setTitle("Add players to your game")
+                .setMultiChoiceItems(labels, checked, (d, which, isChecked) -> checked[which] = isChecked)
+                .setPositiveButton("Add", (d, w) -> {
+                    List<Player> chosen = new ArrayList<>();
+                    for (int i = 0; i < results.size(); i++) if (checked[i]) chosen.add(results.get(i));
+                    int added = GameRepository.get().addPlayers(chosen);
+                    Toast.makeText(requireContext(),
+                            added > 0 ? "Added " + added + " player" + (added == 1 ? "" : "s")
+                                    : "Those players are already in your game",
+                            Toast.LENGTH_LONG).show();
+                    refreshData();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     @Override
