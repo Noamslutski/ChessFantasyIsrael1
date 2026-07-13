@@ -4,23 +4,35 @@ import android.content.Context;
 import android.content.SharedPreferences;
 
 import com.chessfantasy.israel.api.FideFullListLoader;
+import com.chessfantasy.israel.api.UpcomingGamesApi;
 import com.chessfantasy.israel.model.Auction;
 import com.chessfantasy.israel.model.Card;
 import com.chessfantasy.israel.model.GameState;
+import com.chessfantasy.israel.model.LeaderboardEntry;
 import com.chessfantasy.israel.model.PackType;
 import com.chessfantasy.israel.model.Player;
 import com.chessfantasy.israel.model.PlayerRatings;
 import com.chessfantasy.israel.model.Rarity;
+import com.chessfantasy.israel.model.RivalManager;
 import com.chessfantasy.israel.model.SaleListing;
 import com.chessfantasy.israel.model.TradeOffer;
+import com.chessfantasy.israel.model.UpcomingGame;
 import com.google.gson.Gson;
 
+import java.time.DayOfWeek;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.temporal.IsoFields;
+import java.time.temporal.TemporalAdjusters;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.UUID;
@@ -61,8 +73,18 @@ public class GameRepository {
     /** roster + pool, deduped by fideId; the full playable set. */
     private List<Player> combined;
     /** Fast id -> player lookup over {@link #combined}. */
-    private Map<String, Player> playerIndex = new java.util.HashMap<>();
+    private Map<String, Player> playerIndex = new HashMap<>();
     private long poolUpdatedAt;
+
+    /** Upcoming games (fixtures) loaded from the federation API cache. */
+    private List<UpcomingGame> fixtures = new ArrayList<>();
+    private Map<Long, Integer> fixtureCountByFide = new HashMap<>();
+    private Map<String, Integer> fixtureCountByName = new HashMap<>();
+    private long fixturesUpdatedAt;
+
+    public static final int LINEUP_SIZE = 5;
+    public static final int RIVAL_COUNT = 9;
+    private static final int BASE_GAME_SCORE = 50;
     private String clubName = "Israel National Chess Pool";
     private String clubNameHebrew = "";
 
@@ -85,9 +107,11 @@ public class GameRepository {
         if (catalog.clubHebrew != null) clubNameHebrew = catalog.clubHebrew;
         load();
         reloadPoolInternal();
+        reloadFixtures();
         ensureSeeded();
         ensureStarterPacks();
         ensureBaselines();
+        ensureLeaderboard();
         tick();
     }
 
@@ -119,6 +143,12 @@ public class GameRepository {
         if (state.liveRatings == null) state.liveRatings = new java.util.HashMap<>();
         if (state.ratingBaselines == null) state.ratingBaselines = new java.util.HashMap<>();
         if (state.resolvedFideIds == null) state.resolvedFideIds = new java.util.HashMap<>();
+        if (state.gwBaseline == null) state.gwBaseline = new java.util.HashMap<>();
+        if (state.rivals == null) state.rivals = new ArrayList<>();
+        if (state.currentGameweek == null) state.currentGameweek = "";
+        if (state.lastGwSummary == null) state.lastGwSummary = "";
+        if (state.managerName == null) state.managerName = "";
+        if (state.firebaseUid == null) state.firebaseUid = "";
         if (state.season == null || state.season.isEmpty()) {
             state.season = String.valueOf(Calendar.getInstance().get(Calendar.YEAR));
         }
@@ -618,6 +648,248 @@ public class GameRepository {
         return won;
     }
 
+    // --------------------------------------------------------- fixtures (games)
+
+    /** Re-reads the cached upcoming games and rebuilds per-player counts. */
+    public void reloadFixtures() {
+        try {
+            UpcomingGamesApi.Cache cache = new UpcomingGamesApi(appContext).loadCached();
+            fixtures = cache.games != null ? cache.games : new ArrayList<>();
+            fixturesUpdatedAt = cache.updatedAt;
+        } catch (Exception e) {
+            fixtures = new ArrayList<>();
+            fixturesUpdatedAt = 0;
+        }
+        fixtureCountByFide = new HashMap<>();
+        fixtureCountByName = new HashMap<>();
+        for (UpcomingGame g : fixtures) {
+            if (g.playerFideId > 0) {
+                fixtureCountByFide.merge(g.playerFideId, 1, Integer::sum);
+            }
+            String key = normName(g.playerName);
+            if (!key.isEmpty()) fixtureCountByName.merge(key, 1, Integer::sum);
+        }
+    }
+
+    public long fixturesUpdatedAt() {
+        return fixturesUpdatedAt;
+    }
+
+    public List<UpcomingGame> allFixtures() {
+        return fixtures;
+    }
+
+    private String normName(String name) {
+        if (name == null) return "";
+        return name.toLowerCase(Locale.ROOT).replaceAll("[^\\p{L}]", "");
+    }
+
+    /** How many upcoming games the player has in the current slate. */
+    public int gamesForPlayer(Player p) {
+        if (p == null) return 0;
+        long fide = knownFideId(p);
+        Integer byFide = fide > 0 ? fixtureCountByFide.get(fide) : null;
+        if (byFide != null) return byFide;
+        Integer byName = fixtureCountByName.get(normName(p.name));
+        return byName != null ? byName : 0;
+    }
+
+    public List<UpcomingGame> fixturesForPlayer(Player p) {
+        List<UpcomingGame> result = new ArrayList<>();
+        if (p == null) return result;
+        long fide = knownFideId(p);
+        String key = normName(p.name);
+        for (UpcomingGame g : fixtures) {
+            if ((fide > 0 && g.playerFideId == fide) || normName(g.playerName).equals(key)) {
+                result.add(g);
+            }
+        }
+        return result;
+    }
+
+    /** Owned cards whose player has upcoming games. */
+    public int myPlayersWithGames() {
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        int n = 0;
+        for (Card c : myCards()) {
+            if (seen.add(c.playerId) && gamesForPlayer(playerOrUnknown(c.playerId)) > 0) n++;
+        }
+        return n;
+    }
+
+    // ------------------------------------------------- gameweek scoring
+
+    private String isoWeekId(long millis) {
+        LocalDate d = Instant.ofEpochMilli(millis).atZone(ZoneId.systemDefault()).toLocalDate();
+        int week = d.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR);
+        int year = d.get(IsoFields.WEEK_BASED_YEAR);
+        return String.format(Locale.US, "%d-W%02d", year, week);
+    }
+
+    public String currentGameweekId() {
+        return state.currentGameweek;
+    }
+
+    public long gameweekEndMillis() {
+        LocalDate today = Instant.ofEpochMilli(System.currentTimeMillis())
+                .atZone(ZoneId.systemDefault()).toLocalDate();
+        LocalDate nextMonday = today.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+        return nextMonday.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli();
+    }
+
+    public long gameweekRemainingMs() {
+        return Math.max(0, gameweekEndMillis() - System.currentTimeMillis());
+    }
+
+    /**
+     * A player's score for the current gameweek. Real FIDE rating movement is
+     * the performance signal; when a player has several games in the slate the
+     * per-game average is used, matching "average is his score".
+     */
+    public int playerGameweekScore(String playerId) {
+        Player p = getPlayer(playerId);
+        if (p == null) return 0;
+        Integer baseline = state.gwBaseline.get(playerId);
+        int delta = baseline != null ? ratingOf(p) - baseline : 0;
+        int games = Math.max(1, gamesForPlayer(p));
+        double perGame = (double) (delta * 3) / games;   // average per game
+        long score = Math.round(BASE_GAME_SCORE + perGame);
+        return (int) Math.max(0, score);
+    }
+
+    /** The user's lineup: their top cards by value. */
+    public List<Card> lineup() {
+        List<Card> cards = myCards();
+        return cards.size() > LINEUP_SIZE ? cards.subList(0, LINEUP_SIZE) : cards;
+    }
+
+    /** The user's points for the current gameweek (sum over the lineup). */
+    public long managerGameweekPoints() {
+        long total = 0;
+        for (Card c : lineup()) total += playerGameweekScore(c.playerId);
+        return total;
+    }
+
+    public long managerSeasonPoints() {
+        return state.managerSeasonPoints;
+    }
+
+    // ------------------------------------------------- leaderboard
+
+    private static final String[] RIVAL_NAMES = {
+            "ShahMatMaster", "PawnStormPro", "TelAvivTactics", "HaifaHustler",
+            "NegevKnight", "JerusalemGambit", "GalileeGrandmaster", "EilatEndgame",
+            "PetahTikvaProdigy", "BeerShevaBishop", "RamatGanRook", "AshdodAttacker"
+    };
+
+    private void ensureLeaderboard() {
+        if (state.managerName == null || state.managerName.isEmpty()) {
+            state.managerName = "You";
+        }
+        if (state.rivals.isEmpty()) {
+            List<String> names = new ArrayList<>(java.util.Arrays.asList(RIVAL_NAMES));
+            Collections.shuffle(names, random);
+            for (int i = 0; i < Math.min(RIVAL_COUNT, names.size()); i++) {
+                double skill = 0.45 + random.nextDouble() * 0.5; // 0.45..0.95
+                state.rivals.add(new RivalManager(names.get(i), skill));
+            }
+        }
+        ensureGameweek();
+    }
+
+    /** Snapshot every owned/roster player's rating as the week's baseline. */
+    private void snapshotBaselines() {
+        state.gwBaseline.clear();
+        for (Player p : roster) state.gwBaseline.put(p.id, ratingOf(p));
+        for (Card c : myCards()) {
+            Player p = getPlayer(c.playerId);
+            if (p != null) state.gwBaseline.put(p.id, ratingOf(p));
+        }
+    }
+
+    /** Rolls the gameweek over when the ISO week changes, paying rank rewards. */
+    private void ensureGameweek() {
+        String nowId = isoWeekId(System.currentTimeMillis());
+        if (state.currentGameweek.isEmpty()) {
+            state.currentGameweek = nowId;
+            snapshotBaselines();
+            return;
+        }
+        if (!nowId.equals(state.currentGameweek)) {
+            closeGameweek();
+            state.currentGameweek = nowId;
+            snapshotBaselines();
+            for (RivalManager r : state.rivals) r.points = 0;
+        }
+    }
+
+    /** Finalizes the current gameweek: ranks managers and pays the user a pack. */
+    private void closeGameweek() {
+        long myPoints = managerGameweekPoints();
+        state.managerSeasonPoints += myPoints;
+        // Freeze rival points and accumulate their season totals.
+        int rank = 1;
+        for (RivalManager r : state.rivals) {
+            r.seasonPoints += Math.round(r.points);
+            if (r.points > myPoints) rank++;
+        }
+        PackType reward;
+        if (rank == 1) reward = PackType.SUPER_RARE_PACK;
+        else if (rank <= 3) reward = PackType.RARE_PACK;
+        else if (rank <= 10) reward = PackType.LIMITED_PACK;
+        else reward = PackType.FREE;
+        grantPack(reward, 1);
+        state.lastGwSummary = "Gameweek " + state.currentGameweek + " finished — you placed #"
+                + rank + " with " + myPoints + " pts and won a " + reward.displayName + "!";
+    }
+
+    /** Nudges rival points toward their skill target so the board feels live. */
+    private void updateRivals() {
+        long myPoints = managerGameweekPoints();
+        long anchor = Math.max(180, myPoints); // keep rivals in a comparable range
+        for (RivalManager r : state.rivals) {
+            double target = anchor * (0.6 + r.skill * 0.8); // 0.6x..1.5x of anchor
+            r.points += (target - r.points) * 0.15 + (random.nextDouble() - 0.5) * 12;
+            if (r.points < 0) r.points = 0;
+        }
+    }
+
+    public List<LeaderboardEntry> leaderboard() {
+        List<LeaderboardEntry> list = new ArrayList<>();
+        list.add(new LeaderboardEntry(state.managerName, managerGameweekPoints(),
+                state.managerSeasonPoints, true));
+        for (RivalManager r : state.rivals) {
+            list.add(new LeaderboardEntry(r.name, Math.round(r.points), r.seasonPoints, false));
+        }
+        list.sort((a, b) -> Long.compare(b.points, a.points));
+        return list;
+    }
+
+    public int myLeaderboardRank() {
+        List<LeaderboardEntry> board = leaderboard();
+        for (int i = 0; i < board.size(); i++) if (board.get(i).isUser) return i + 1;
+        return board.size();
+    }
+
+    public String getManagerName() {
+        return state.managerName;
+    }
+
+    public void setManagerName(String name) {
+        if (name != null && !name.trim().isEmpty()) {
+            state.managerName = name.trim();
+            save();
+        }
+    }
+
+    /** Returns and clears the one-shot last-gameweek summary. */
+    public String consumeLastGwSummary() {
+        String s = state.lastGwSummary;
+        state.lastGwSummary = "";
+        if (s != null && !s.isEmpty()) save();
+        return s;
+    }
+
     // -------------------------------------------------------------------- ads
 
     private long todayEpochDay() {
@@ -944,6 +1216,8 @@ public class GameRepository {
         botsSendRandomOffer();
         replenishBotListings();
         pruneResolvedOffers();
+        ensureGameweek();
+        updateRivals();
         save();
     }
 

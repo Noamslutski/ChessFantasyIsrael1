@@ -78,6 +78,14 @@ public class HomeFragment extends Fragment implements Refreshable {
         Button spin = view.findViewById(R.id.home_btn_spin);
         spin.setOnClickListener(v ->
                 startActivity(new Intent(requireContext(), SpinActivity.class)));
+
+        Button league = view.findViewById(R.id.home_btn_league);
+        league.setOnClickListener(v ->
+                startActivity(new Intent(requireContext(), LeaderboardActivity.class)));
+
+        Button games = view.findViewById(R.id.home_btn_games);
+        games.setOnClickListener(v ->
+                startActivity(new Intent(requireContext(), UpcomingGamesActivity.class)));
     }
 
     @Override
@@ -94,6 +102,24 @@ public class HomeFragment extends Fragment implements Refreshable {
 
         TextView season = view.findViewById(R.id.home_season);
         season.setText("Season " + repo.getSeason());
+
+        TextView gameweek = view.findViewById(R.id.home_gameweek);
+        gameweek.setText("Gameweek " + repo.currentGameweekId()
+                + " · #" + repo.myLeaderboardRank() + " of " + (GameRepository.RIVAL_COUNT + 1));
+        TextView gwPoints = view.findViewById(R.id.home_gw_points);
+        gwPoints.setText(repo.managerGameweekPoints() + " pts · ends in "
+                + Format.timeLeft(repo.gameweekRemainingMs())
+                + " · " + repo.myPlayersWithGames() + " of your players have games");
+
+        // Show the result of a gameweek that just closed, once.
+        String summary = repo.consumeLastGwSummary();
+        if (summary != null && !summary.isEmpty()) {
+            new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                    .setTitle("Gameweek result")
+                    .setMessage(summary)
+                    .setPositiveButton("Nice!", null)
+                    .show();
+        }
 
         TextView balance = view.findViewById(R.id.home_balance);
         balance.setText(Format.pawns(repo.getPawns()));

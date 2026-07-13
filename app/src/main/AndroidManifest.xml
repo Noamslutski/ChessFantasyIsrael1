@@ -37,6 +37,12 @@
         <activity
             android:name=".ui.SpinActivity"
             android:screenOrientation="portrait" />
+        <activity
+            android:name=".ui.LeaderboardActivity"
+            android:screenOrientation="portrait" />
+        <activity
+            android:name=".ui.UpcomingGamesActivity"
+            android:screenOrientation="portrait" />
     </application>
 
 </manifest>

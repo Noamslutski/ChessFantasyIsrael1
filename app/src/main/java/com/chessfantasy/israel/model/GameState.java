@@ -47,4 +47,20 @@ public class GameState {
     public long lastFreePackAt = 0;      // epoch millis
     public int adsWatchedToday = 0;
     public long adsDayStamp = 0;         // epoch day the ad counter refers to
+
+    // ---- Gameweeks, scoring & leaderboard ----
+    /** ISO gameweek id, e.g. "2026-W29". */
+    public String currentGameweek = "";
+    /** Player rating captured at the start of the current gameweek. key = playerId */
+    public Map<String, Integer> gwBaseline = new HashMap<>();
+    /** Cumulative manager points across all gameweeks. */
+    public long managerSeasonPoints = 0;
+    /** Simulated rival managers for the leaderboard (until Firebase is connected). */
+    public List<RivalManager> rivals = new ArrayList<>();
+    /** One-shot summary of the last closed gameweek, shown once then cleared. */
+    public String lastGwSummary = "";
+
+    /** Firebase anonymous user id, once signed in (empty otherwise). */
+    public String firebaseUid = "";
+    public String managerName = "";
 }
