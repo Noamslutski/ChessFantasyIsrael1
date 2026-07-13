@@ -1,0 +1,12 @@
+[project]
+name = "chessfantasy-tools"
+version = "0.1.0"
+description = "Data tooling for Chess Fantasy Israel — pulls chess-results.com data via the parse.bot Parse SDK to generate app assets."
+requires-python = ">=3.10"
+dependencies = [
+    "parse-apis",
+    "parse-sdk>=0.1.0",
+]
+
+[tool.uv.sources]
+parse-apis = { path = "parse_apis", editable = true }
