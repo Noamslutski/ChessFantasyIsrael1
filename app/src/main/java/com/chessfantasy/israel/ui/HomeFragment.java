@@ -79,6 +79,9 @@ public class HomeFragment extends Fragment implements Refreshable {
         spin.setOnClickListener(v ->
                 startActivity(new Intent(requireContext(), SpinActivity.class)));
 
+        Button account = view.findViewById(R.id.home_btn_account);
+        account.setOnClickListener(v -> showAccountDialog());
+
         Button team = view.findViewById(R.id.home_btn_team);
         team.setOnClickListener(v ->
                 startActivity(new Intent(requireContext(), TeamActivity.class)));
@@ -90,6 +93,39 @@ public class HomeFragment extends Fragment implements Refreshable {
         Button games = view.findViewById(R.id.home_btn_games);
         games.setOnClickListener(v ->
                 startActivity(new Intent(requireContext(), UpcomingGamesActivity.class)));
+    }
+
+    private void showAccountDialog() {
+        GameRepository repo = GameRepository.get();
+        com.chessfantasy.israel.data.FirebaseGateway fb = com.chessfantasy.israel.data.FirebaseGateway.get();
+        String status = fb.isEnabled()
+                ? "Signed in" + (fb.uid() != null ? " (" + fb.uid().substring(0, Math.min(6, fb.uid().length())) + "…)" : "")
+                : "Local mode (Firebase not configured)";
+        String msg = "Manager: " + repo.getManagerName()
+                + "\nSeason points: " + Format.pawns(repo.managerSeasonPoints())
+                + "\n" + status;
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle(R.string.account)
+                .setMessage(msg)
+                .setPositiveButton(R.string.logout, (d, w) -> confirmLogout())
+                .setNegativeButton("Close", null)
+                .show();
+    }
+
+    private void confirmLogout() {
+        new androidx.appcompat.app.AlertDialog.Builder(requireContext())
+                .setTitle(R.string.logout)
+                .setMessage("This signs you out and resets this device to a fresh manager (your collection, packs, team and points are cleared). Continue?")
+                .setPositiveButton("Reset", (d, w) -> {
+                    com.chessfantasy.israel.data.FirebaseGateway.get().signOut();
+                    GameRepository.get().resetAccount();
+                    com.chessfantasy.israel.data.FirebaseGateway.get()
+                            .signIn(() -> GameRepository.get().syncRemote(true));
+                    Toast.makeText(requireContext(), "Signed out — fresh start!", Toast.LENGTH_SHORT).show();
+                    requireActivity().recreate();
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 
     @Override

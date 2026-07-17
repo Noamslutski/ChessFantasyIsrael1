@@ -75,6 +75,17 @@
     <string name="pick_team_hint">Choose up to 5 cards. Their gameweek scores add up to your leaderboard points. Tip: a lower-rated player who upsets a stronger opponent can out-score an elite!</string>
     <string name="save_team">Save team</string>
 
+    <!-- Essence forge -->
+    <string name="essence_forge">Essence Forge</string>
+    <string name="essence_forge_open">Forge</string>
+    <string name="recycle_commons">Recycle selected commons</string>
+    <string name="open_box">Open box (10 essence)</string>
+    <string name="essence_hint">Recycle Common cards into Essence bottles (2 each). Spend 10 Essence on a box of 3 Commons rated ~100 above the average of what you fed in — turn spares into upgrades.</string>
+
+    <!-- Account -->
+    <string name="account">Account</string>
+    <string name="logout">Log out / reset</string>
+
     <!-- Players -->
     <string name="refresh_ratings">Refresh live ratings (FIDE · chess.org.il · chess.com)</string>
     <string name="ratings_updating">Fetching live ratings from FIDE, chess.org.il, chess.com…</string>

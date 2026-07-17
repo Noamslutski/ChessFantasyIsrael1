@@ -20,6 +20,14 @@
         android:layout_marginTop="8dp"
         android:text="@string/watch_ad" />
 
+    <Button
+        android:id="@+id/packs_btn_forge"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:backgroundTint="@color/accent_purple"
+        android:text="@string/essence_forge" />
+
     <androidx.core.widget.NestedScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"

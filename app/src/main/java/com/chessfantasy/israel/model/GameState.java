@@ -27,6 +27,12 @@ public class GameState {
     /** Epoch millis of the last daily spin (0 = never). */
     public long lastSpinAt = 0;
 
+    /** Essence (bottles) earned by recycling Common cards in the forge. */
+    public long essence = 0;
+    /** Running total + count of ratings of recycled commons (for box output). */
+    public long essenceRatingSum = 0;
+    public int essenceCardCount = 0;
+
     /** key = season:playerId:rarity -> cards minted so far */
     public Map<String, Integer> mintCounts = new HashMap<>();
 

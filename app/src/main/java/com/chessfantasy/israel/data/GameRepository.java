@@ -645,6 +645,124 @@ public class GameRepository {
         return cards;
     }
 
+    // ------------------------------------------------ essence forge
+
+    public static final int ESSENCE_PER_COMMON = 2;
+    public static final int BOX_COST_ESSENCE = 10;
+    public static final int BOX_CARDS = 3;
+    public static final int BOX_RATING_BONUS = 100;
+
+    public long getEssence() {
+        return state.essence;
+    }
+
+    /** Average FIDE rating of the commons recycled so far (0 if none). */
+    public int essenceAvgFed() {
+        return state.essenceCardCount > 0
+                ? (int) Math.round((double) state.essenceRatingSum / state.essenceCardCount) : 0;
+    }
+
+    /** Target rating of the next box's cards. */
+    public int boxTargetRating() {
+        int avg = essenceAvgFed();
+        return avg > 0 ? avg + BOX_RATING_BONUS : 1600 + BOX_RATING_BONUS;
+    }
+
+    public boolean canOpenBox() {
+        return state.essence >= BOX_COST_ESSENCE;
+    }
+
+    /** My Common cards that are free to recycle (not in the team). */
+    public List<Card> recyclableCommons() {
+        List<Card> out = new ArrayList<>();
+        for (Card c : myCards()) {
+            if (c.rarity == Rarity.COMMON && !isInTeam(c.id)) out.add(c);
+        }
+        return out;
+    }
+
+    /**
+     * Recycles Common cards into essence. Each common yields
+     * {@link #ESSENCE_PER_COMMON} essence and feeds the running rating average
+     * that decides future box quality. Returns essence gained.
+     */
+    public long recycleCommons(List<String> cardIds) {
+        if (cardIds == null || cardIds.isEmpty()) return 0;
+        long ratingSum = 0;
+        int count = 0;
+        for (String id : cardIds) {
+            Card c = getCard(id);
+            if (c == null || !USER_ID.equals(c.owner)) continue;
+            if (c.rarity != Rarity.COMMON) continue;
+            if (isInTeam(id) || isCardListed(id)) continue;
+            ratingSum += ratingOf(playerOrUnknown(c.playerId));
+            state.cards.remove(id);
+            state.teamCardIds.remove(id);
+            count++;
+        }
+        if (count == 0) return 0;
+        long gained = (long) count * ESSENCE_PER_COMMON;
+        state.essence += gained;
+        state.essenceRatingSum += ratingSum;
+        state.essenceCardCount += count;
+        save();
+        return gained;
+    }
+
+    /**
+     * Opens an essence box: spends {@link #BOX_COST_ESSENCE} essence and mints
+     * {@link #BOX_CARDS} Common cards of players rated ~100 above the average of
+     * what you recycled. Null if you can't afford it.
+     */
+    public List<Card> openEssenceBox() {
+        if (state.essence < BOX_COST_ESSENCE) return null;
+        state.essence -= BOX_COST_ESSENCE;
+        int target = boxTargetRating();
+        List<Card> cards = new ArrayList<>();
+        for (int i = 0; i < BOX_CARDS; i++) {
+            Card c = mintCommonNearRating(target, USER_ID);
+            if (c != null) cards.add(c);
+        }
+        save();
+        return cards;
+    }
+
+    /** Mints a Common card for a player rated at/above {@code target} (closest). */
+    private Card mintCommonNearRating(int target, String owner) {
+        List<Player> band = new ArrayList<>();
+        for (Player p : combined) {
+            int r = ratingOf(p);
+            if (r >= target && r <= target + 250) band.add(p);
+        }
+        if (band.isEmpty()) {
+            for (Player p : combined) if (ratingOf(p) >= target) band.add(p);
+        }
+        if (band.isEmpty()) {
+            // Nobody above target — take the strongest available (list is desc).
+            int lim = Math.min(20, combined.size());
+            for (int i = 0; i < lim; i++) band.add(combined.get(i));
+        }
+        if (band.isEmpty()) return null;
+        Player p = band.get(random.nextInt(band.size()));
+        return mintCard(p.id, Rarity.COMMON, owner);
+    }
+
+    // ------------------------------------------------ account reset (logout)
+
+    /** Signs out and wipes local progress to a fresh manager. */
+    public void resetAccount() {
+        state = new GameState();
+        state.season = String.valueOf(Calendar.getInstance().get(Calendar.YEAR));
+        save();
+        reloadPoolInternal();
+        reloadFixtures();
+        ensureSeeded();
+        ensureStarterPacks();
+        ensureBaselines();
+        ensureLeaderboard();
+        tick();
+    }
+
     // ---------------------------------------------------------- daily spin
 
     public boolean spinAvailable() {
@@ -1145,6 +1263,7 @@ public class GameRepository {
         Card card = getCard(cardId);
         if (card == null || !USER_ID.equals(card.owner)) return "You don't own this card";
         if (card.rarity == Rarity.COMMON) return "Common cards can't be sold — only Limited and up.";
+        if (isInTeam(cardId)) return "This card is in your gameweek team — remove it from your team first.";
         if (isCardListed(cardId)) return "Card is already listed";
         if (minBid <= 0) return "Minimum bid must be positive";
         Auction a = new Auction();

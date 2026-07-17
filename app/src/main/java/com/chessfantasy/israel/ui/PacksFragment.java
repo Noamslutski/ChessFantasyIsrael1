@@ -52,6 +52,10 @@ public class PacksFragment extends Fragment implements Refreshable {
             }
             startActivity(new Intent(requireContext(), AdActivity.class));
         });
+
+        Button forge = view.findViewById(R.id.packs_btn_forge);
+        forge.setOnClickListener(v ->
+                startActivity(new Intent(requireContext(), EssenceActivity.class)));
     }
 
     @Override

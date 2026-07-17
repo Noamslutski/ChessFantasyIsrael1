@@ -95,6 +95,16 @@ public class FirebaseGateway {
         }
     }
 
+    /** Signs the anonymous user out (a new anon id is created on next sign-in). */
+    public void signOut() {
+        if (!enabled) return;
+        try {
+            auth.signOut();
+            uid = null;
+        } catch (Throwable ignored) {
+        }
+    }
+
     /** Publishes this manager's current standing to the global leaderboard. */
     public void syncManager(String gameweek, String name, long points, long seasonPoints) {
         if (!enabled || uid == null || gameweek == null || gameweek.isEmpty()) return;
